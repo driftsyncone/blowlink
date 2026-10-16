@@ -23,9 +23,9 @@ Autoblow's VacuGlide API has **no position control**, only a target speed (0–1
 
 ## How commands become speed
 
-- **Stroke commands (LinearCmd)**, `-map tempo` (default): the bridge counts strokes per minute (two moves = one stroke) and maps that onto the VacuGlide 2's 15–225 strokes/min spec range (`-spm-low`, `-spm-high`; VacuGlide 1: 25–200).
+- **Stroke commands (LinearCmd)**, `-map tempo`: the bridge counts strokes per minute (two moves = one stroke) and maps that onto the VacuGlide 2's 15–225 strokes/min spec range (`-spm-low`, `-spm-high`; VacuGlide 1: 25–200).
   - Depth is ignored: a shallow stroke on the beat still counts as a stroke.
-  - `-map velocity`: speed % = |Δpos| in funscript units (0–100) per second ÷ 6, capped at 100 %. Depth counts.
+  - `-map velocity` (default since 2026-10-16): speed % = |Δpos| in funscript units (0–100) per second ÷ 6, capped at 100 %. Depth counts.
   - Uses the real gap between commands when it's longer than the stated duration (quick move, then hold).
   - Waits for the second move of a run before setting a speed (avoids spikes).
   - Light smoothing; changes under 5 % are not sent (saves API calls).
@@ -62,7 +62,7 @@ Uploading test funscripts through Autoblow's sync-script API and polling `GET /v
 ## Next steps
 
 1. **First real run**: hold the VacuGlide's mode button 2.5 s, run `./vacuglide-bridge -v -max 40`, and check the log shows "VacuGlide connected".
-2. **Check the speed scale**: set 50 % and count strokes for 15 s. The VacuGlide 2 spec range suggests about 120/min at 50 %. If it's off, adjust `-spm-low` / `-spm-high`. Also try `-map velocity` and see which feels closer to the beat.
+2. **Check the speed scale**: set 50 % and count strokes for 15 s. The VacuGlide 2 spec range suggests about 120/min at 50 %. If it's off, adjust `-spm-low` / `-spm-high`. Also try `-map tempo` and see which feels closer to the beat.
 3. **Measure latency**: whether 200 ms pacing is fine or Autoblow rate-limits it (watch for HTTP 429 in the log).
 4. **Remove the 40 % cap** once it behaves, so max sections reach their real speed.
 5. **Slow sections** run at the device's lowest useful speed (5 %, about 24 strokes/min on the spec range) and are faster than the beat. Possible later fix: pulse the motor on/off to fake slower rates.

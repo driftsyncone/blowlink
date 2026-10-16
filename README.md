@@ -25,11 +25,11 @@ and the suction valves. So the bridge can match the game's **tempo** but can't
 land each stroke exactly on the beat. Cloud latency is about 100–300 ms.
 
 - **Stroke commands** (LinearCmd), two ways (`-map`):
-  - `tempo` (default): counts strokes per minute and maps them onto the
+  - `tempo`: counts strokes per minute and maps them onto the
     VacuGlide 2's 15–225 strokes/min range (`-spm-low` / `-spm-high`; use
     25 / 200 for a VacuGlide 1). Depth is ignored, so a shallow stroke on the
     beat still counts as a stroke. The range is from the spec, not measured.
-  - `velocity`: the same curve Autoblow's own funscript player uses, measured
+  - `velocity` (default): the same curve Autoblow's own funscript player uses, measured
     on a VacuGlide 2: speed % = stroke velocity in funscript units per second
     ÷ 6, so 600 units/s and up is 100 %. Depth counts: half-depth strokes in
     the same time run at half speed. A game's strokes then feel the same as
@@ -65,7 +65,7 @@ controls.
 | `-addr` | `127.0.0.1:12345` | WebSocket listen address |
 | `-max` | `100` | Speed cap in % |
 | `-min` | `5` | Lowest non-zero speed in % (Autoblow's own app starts at 5) |
-| `-map` | `tempo` | `tempo` (strokes/min) or `velocity` (Autoblow's funscript curve) |
+| `-map` | `velocity` | `velocity` (Autoblow's funscript curve) or `tempo` (strokes/min) |
 | `-spm-low` / `-spm-high` | `15` / `225` | `-map tempo`: strokes/min at 1 % / 100 % (VacuGlide 1: 25 / 200) |
 | `-interval` | `200ms` | Minimum time between API calls |
 | `-idle` | `1.5s` | Stop after this long with no strokes |

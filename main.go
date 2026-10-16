@@ -4,8 +4,8 @@
 // The VacuGlide API has no position control, only a target speed (0-100 %),
 // so every command is turned into a speed:
 //   - Vibrate / Scalar / Rotate: the level is the speed.
-//   - Linear (stroke) commands: the stroke rate becomes the speed (-map tempo),
-//     or the stroke velocity, as Autoblow's own funscript player does (-map velocity).
+//   - Linear (stroke) commands: the stroke velocity becomes the speed, as
+//     Autoblow's own funscript player does (default), or the stroke rate (-map tempo).
 package main
 
 import (
@@ -37,7 +37,7 @@ var (
 	tokenArg = flag.String("token", "", "VacuGlide device token (or $VACUGLIDE_TOKEN, or ~/.config/vacuglide-bridge/token)")
 	maxSpeed = flag.Int("max", 100, "speed cap in percent (strokes faster than this are clamped)")
 	minSpeed = flag.Int("min", 5, "lowest non-zero speed in percent (Autoblow's own app starts at 5)")
-	mapping  = flag.String("map", "tempo", `how strokes become speed: "tempo" (strokes per minute, depth ignored) or "velocity" (like Autoblow's own funscript player)`)
+	mapping  = flag.String("map", "velocity", `how strokes become speed: "velocity" (like Autoblow's own funscript player) or "tempo" (strokes per minute, depth ignored)`)
 	spmLow   = flag.Float64("spm-low", 15, `-map tempo: device strokes per minute at 1% speed (VacuGlide 2: 15, VacuGlide 1: 25)`)
 	spmHigh  = flag.Float64("spm-high", 225, `-map tempo: device strokes per minute at 100% speed (VacuGlide 2: 225, VacuGlide 1: 200)`)
 	interval = flag.Duration("interval", 200*time.Millisecond, "minimum time between API calls")
@@ -95,8 +95,8 @@ func (m *motor) scalar(level float64) {
 	m.set(clamp01(level)*float64(*maxSpeed), false, 0)
 }
 
-// stroke turns a LinearCmd into a device speed: from the stroke rate (default)
-// or, with -map velocity, from the move's velocity. A full stroke is down and
+// stroke turns a LinearCmd into a device speed: from the move's velocity
+// (default) or, with -map tempo, from the stroke rate. A full stroke is down and
 // back up, i.e. two moves. Example: Cock Hero sends 0 then 1, each lasting half a
 // beat, so 120 BPM = 120 strokes/min (tempo) = 400 units/s = 67 % (velocity).
 func (m *motor) stroke(pos float64, durMs float64) {
