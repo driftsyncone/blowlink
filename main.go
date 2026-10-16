@@ -4,7 +4,8 @@
 // The VacuGlide API has no position control, only a target speed (0-100 %),
 // so every command is turned into a speed:
 //   - Vibrate / Scalar / Rotate: the level is the speed.
-//   - Linear (stroke) commands: stroke velocity becomes the speed.
+//   - Linear (stroke) commands: the stroke rate becomes the speed (-map tempo),
+//     or the stroke velocity, as Autoblow's own funscript player does (-map velocity).
 package main
 
 import (
@@ -35,9 +36,10 @@ var (
 	addr     = flag.String("addr", "127.0.0.1:12345", "websocket listen address (Intiface default is 12345)")
 	tokenArg = flag.String("token", "", "VacuGlide device token (or $VACUGLIDE_TOKEN, or ~/.config/vacuglide-bridge/token)")
 	maxSpeed = flag.Int("max", 100, "speed cap in percent (strokes faster than this are clamped)")
-	minSpeed = flag.Int("min", 1, "lowest non-zero speed in percent (raise if the device stalls at low speeds)")
-	spmLow   = flag.Float64("spm-low", 25, "device strokes per minute at 1% speed")
-	spmHigh  = flag.Float64("spm-high", 200, "device strokes per minute at 100% speed")
+	minSpeed = flag.Int("min", 5, "lowest non-zero speed in percent (Autoblow's own app starts at 5)")
+	mapping  = flag.String("map", "tempo", `how strokes become speed: "tempo" (strokes per minute, depth ignored) or "velocity" (like Autoblow's own funscript player)`)
+	spmLow   = flag.Float64("spm-low", 15, `-map tempo: device strokes per minute at 1% speed (VacuGlide 2: 15, VacuGlide 1: 25)`)
+	spmHigh  = flag.Float64("spm-high", 225, `-map tempo: device strokes per minute at 100% speed (VacuGlide 2: 225, VacuGlide 1: 200)`)
 	interval = flag.Duration("interval", 200*time.Millisecond, "minimum time between API calls")
 	idle     = flag.Duration("idle", 1500*time.Millisecond, "stop after this long with no stroke commands")
 	dry      = flag.Bool("dry", false, "log speeds instead of calling the API")
@@ -51,7 +53,7 @@ type motor struct {
 	want     int       // desired speed 0-100
 	lastPos  float64   // last linear target position
 	lastMove time.Time // when the last moving LinearCmd arrived
-	spm      float64   // smoothed stroke rate from linear commands
+	rate     float64   // smoothed speed (or stroke rate, -map tempo) from linear commands
 	linear   bool      // current speed comes from linear commands
 	deadline time.Time // linear mode: drop to 0 after this
 	wake     chan struct{}
@@ -72,7 +74,7 @@ func (m *motor) set(pct float64, linear bool, hold time.Duration) {
 	if linear {
 		m.deadline = time.Now().Add(hold)
 	} else {
-		m.spm, m.lastMove = 0, time.Time{}
+		m.rate, m.lastMove = 0, time.Time{}
 	}
 	m.mu.Unlock()
 	select {
@@ -93,9 +95,10 @@ func (m *motor) scalar(level float64) {
 	m.set(clamp01(level)*float64(*maxSpeed), false, 0)
 }
 
-// stroke turns a LinearCmd into a stroke rate and picks the device speed that
-// matches it. A full stroke is down and back up, i.e. two moves.
-// Example: Cock Hero sends 0 then 1, each lasting half a beat, so 120 BPM = 120 strokes/min.
+// stroke turns a LinearCmd into a device speed: from the stroke rate (default)
+// or, with -map velocity, from the move's velocity. A full stroke is down and
+// back up, i.e. two moves. Example: Cock Hero sends 0 then 1, each lasting half a
+// beat, so 120 BPM = 120 strokes/min (tempo) = 400 units/s = 67 % (velocity).
 func (m *motor) stroke(pos float64, durMs float64) {
 	pos = clamp01(pos)
 	m.mu.Lock()
@@ -116,7 +119,7 @@ func (m *motor) stroke(pos float64, durMs float64) {
 	if !m.linear || now.After(m.deadline) || gap > 10 {
 		// First move of a run: the real pace is unknown until the next move
 		// arrives, so just start tracking (avoids a speed spike on quick moves).
-		m.linear, m.spm = true, 0
+		m.linear, m.rate = true, 0
 		m.deadline = now.Add(time.Duration(secs*float64(time.Second)) + *idle)
 		m.mu.Unlock()
 		return
@@ -124,15 +127,26 @@ func (m *motor) stroke(pos float64, durMs float64) {
 	if gap > secs {
 		secs = gap
 	}
-	// Count strokes, not depth: a shallow stroke on the beat is still a stroke.
-	spm := 60 / secs / 2
-	if m.linear && m.spm > 0 { // light smoothing so speed doesn't jump every stroke
-		spm = 0.6*spm + 0.4*m.spm
+	var rate float64
+	if *mapping == "tempo" {
+		// Count strokes, not depth: a shallow stroke on the beat is still a stroke.
+		rate = 60 / secs / 2
+	} else {
+		// Same curve as Autoblow's own funscript player (measured on a VacuGlide 2):
+		// speed % = funscript units per second ÷ 6, so 600 units/s and up is 100 %.
+		// Depth counts: a half-depth stroke in the same time runs at half speed.
+		rate = dist * 100 / secs / 6
 	}
-	m.spm = spm
+	if m.rate > 0 { // light smoothing so speed doesn't jump every stroke
+		rate = 0.6*rate + 0.4*m.rate
+	}
+	m.rate = rate
 	m.mu.Unlock()
 
-	pct := 1 + (spm-*spmLow)/(*spmHigh-*spmLow)*99
+	pct := rate
+	if *mapping == "tempo" {
+		pct = 1 + (rate-*spmLow)/(*spmHigh-*spmLow)*99
+	}
 	m.set(math.Max(pct, 1), true, time.Duration(secs*float64(time.Second))+*idle)
 }
 
@@ -450,6 +464,9 @@ func loadToken() string {
 func main() {
 	flag.Parse()
 	log.SetFlags(log.Ltime)
+	if *mapping != "velocity" && *mapping != "tempo" {
+		log.Fatalf(`-map must be "velocity" or "tempo", not %q`, *mapping)
+	}
 
 	var a *api
 	if !*dry {
