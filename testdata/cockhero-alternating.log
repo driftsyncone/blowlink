@@ -1,0 +1,1805 @@
+16:09:25 Intiface stand-in listening on ws://127.0.0.1:12345
+16:09:26 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:09:27 <- [
+	{
+		"RequestServerInfo":
+		{
+			"Id": 1,
+			"ClientName": "Cock Hero Game",
+			"MessageVersion": 3
+		}
+	}
+]
+16:09:27 client "Cock Hero Game" connected (protocol v3)
+16:09:27 -> [{"ServerInfo":{"Id":1,"MaxPingTime":0,"MessageVersion":3,"ServerName":"vacuglide-bridge"}}]
+16:09:27 <- [
+	{
+		"RequestDeviceList":
+		{
+			"Id": 2
+		}
+	}
+]
+16:09:27 -> [{"DeviceList":{"Devices":[{"DeviceIndex":0,"DeviceMessages":{"LinearCmd":[{"ActuatorType":"Position","FeatureDescriptor":"Stroke","StepCount":100}],"ScalarCmd":[{"ActuatorType":"Vibrate","FeatureDescriptor":"Speed","StepCount":100}],"StopDeviceCmd":{}},"DeviceName":"Autoblow VacuGlide"}],"Id":2}}]
+16:09:27 <- [
+	{
+		"StartScanning":
+		{
+			"Id": 3
+		}
+	}
+]
+16:09:27 -> [{"Ok":{"Id":3}}]
+16:09:27 -> [{"ScanningFinished":{"Id":0}}]
+16:09:36 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:09:46 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:09:56 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:10:06 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:10:16 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:10:27 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:10:37 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:10:47 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:10:57 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:11:07 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:11:18 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:11:28 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:11:37 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 4,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 1604,
+					"Position": 0
+				}
+			]
+		}
+	}
+]
+16:11:37 -> [{"Ok":{"Id":4}}]
+16:11:37 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 5,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:37 -> [{"Ok":{"Id":5}}]
+16:11:37 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 6,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:37 -> [{"Ok":{"Id":6}}]
+16:11:38 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:11:38 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 7,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 1604,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:11:38 -> [{"Ok":{"Id":7}}]
+16:11:38 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 8,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:38 -> [{"Ok":{"Id":8}}]
+16:11:39 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 9,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:39 -> [{"Ok":{"Id":9}}]
+16:11:40 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 10,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 4011,
+					"Position": 0
+				}
+			]
+		}
+	}
+]
+16:11:40 -> [{"Ok":{"Id":10}}]
+16:11:40 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 11,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:40 -> [{"Ok":{"Id":11}}]
+16:11:40 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 12,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:40 -> [{"Ok":{"Id":12}}]
+16:11:44 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 13,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 1604,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:11:44 -> [{"Ok":{"Id":13}}]
+16:11:44 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 14,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:44 -> [{"Ok":{"Id":14}}]
+16:11:44 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 15,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:44 -> [{"Ok":{"Id":15}}]
+16:11:46 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 16,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 1604,
+					"Position": 0
+				}
+			]
+		}
+	}
+]
+16:11:46 -> [{"Ok":{"Id":16}}]
+16:11:46 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 17,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:46 -> [{"Ok":{"Id":17}}]
+16:11:46 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 18,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:46 -> [{"Ok":{"Id":18}}]
+16:11:47 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 19,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 4011,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:11:47 -> [{"Ok":{"Id":19}}]
+16:11:47 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 20,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:47 -> [{"Ok":{"Id":20}}]
+16:11:47 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 21,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:47 -> [{"Ok":{"Id":21}}]
+16:11:48 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:11:51 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 22,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 1604,
+					"Position": 0
+				}
+			]
+		}
+	}
+]
+16:11:51 -> [{"Ok":{"Id":22}}]
+16:11:51 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 23,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:51 -> [{"Ok":{"Id":23}}]
+16:11:51 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 24,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:51 -> [{"Ok":{"Id":24}}]
+16:11:53 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 25,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 1604,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:11:53 -> [{"Ok":{"Id":25}}]
+16:11:53 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 26,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:53 -> [{"Ok":{"Id":26}}]
+16:11:53 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 27,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:53 -> [{"Ok":{"Id":27}}]
+16:11:55 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 28,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 1254,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:11:55 -> [{"Ok":{"Id":28}}]
+16:11:55 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 29,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:55 -> [{"Ok":{"Id":29}}]
+16:11:55 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 30,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:55 -> [{"Ok":{"Id":30}}]
+16:11:56 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 31,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 941,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:11:56 -> [{"Ok":{"Id":31}}]
+16:11:56 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 32,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:56 -> [{"Ok":{"Id":32}}]
+16:11:56 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 33,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:56 -> [{"Ok":{"Id":33}}]
+16:11:57 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 34,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 3137,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:11:57 -> [{"Ok":{"Id":34}}]
+16:11:57 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 35,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:57 -> [{"Ok":{"Id":35}}]
+16:11:57 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 36,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:57 -> [{"Ok":{"Id":36}}]
+16:11:58 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:11:59 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 37,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:11:59 -> [{"Ok":{"Id":37}}]
+16:11:59 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 38,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:11:59 -> [{"Ok":{"Id":38}}]
+16:12:00 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 39,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:00 -> [{"Ok":{"Id":39}}]
+16:12:00 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 40,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:00 -> [{"Ok":{"Id":40}}]
+16:12:00 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 41,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:00 -> [{"Ok":{"Id":41}}]
+16:12:00 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 42,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 280,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:00 -> [{"Ok":{"Id":42}}]
+16:12:01 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 43,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:01 -> [{"Ok":{"Id":43}}]
+16:12:01 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 44,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:01 -> [{"Ok":{"Id":44}}]
+16:12:01 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 45,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:01 -> [{"Ok":{"Id":45}}]
+16:12:01 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 46,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:01 -> [{"Ok":{"Id":46}}]
+16:12:01 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 47,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:01 -> [{"Ok":{"Id":47}}]
+16:12:01 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 48,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:01 -> [{"Ok":{"Id":48}}]
+16:12:02 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 49,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 280,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:02 -> [{"Ok":{"Id":49}}]
+16:12:02 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 50,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:02 -> [{"Ok":{"Id":50}}]
+16:12:02 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 51,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:02 -> [{"Ok":{"Id":51}}]
+16:12:02 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 52,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:02 -> [{"Ok":{"Id":52}}]
+16:12:02 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 53,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:02 -> [{"Ok":{"Id":53}}]
+16:12:02 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 54,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:02 -> [{"Ok":{"Id":54}}]
+16:12:03 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 55,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:03 -> [{"Ok":{"Id":55}}]
+16:12:03 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 56,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 280,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:03 -> [{"Ok":{"Id":56}}]
+16:12:03 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 57,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:03 -> [{"Ok":{"Id":57}}]
+16:12:03 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 58,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:03 -> [{"Ok":{"Id":58}}]
+16:12:03 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 59,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:03 -> [{"Ok":{"Id":59}}]
+16:12:03 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 60,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:03 -> [{"Ok":{"Id":60}}]
+16:12:04 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 61,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:04 -> [{"Ok":{"Id":61}}]
+16:12:07 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 62,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:07 -> [{"Ok":{"Id":62}}]
+16:12:07 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 63,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:07 -> [{"Ok":{"Id":63}}]
+16:12:07 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 64,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:07 -> [{"Ok":{"Id":64}}]
+16:12:07 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 65,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:07 -> [{"Ok":{"Id":65}}]
+16:12:07 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 66,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:07 -> [{"Ok":{"Id":66}}]
+16:12:08 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 67,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:08 -> [{"Ok":{"Id":67}}]
+16:12:08 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 68,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:08 -> [{"Ok":{"Id":68}}]
+16:12:08 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 69,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:08 -> [{"Ok":{"Id":69}}]
+16:12:08 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:12:08 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 70,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:08 -> [{"Ok":{"Id":70}}]
+16:12:09 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 71,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:09 -> [{"Ok":{"Id":71}}]
+16:12:09 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 72,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:09 -> [{"Ok":{"Id":72}}]
+16:12:09 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 73,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:09 -> [{"Ok":{"Id":73}}]
+16:12:09 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 74,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:09 -> [{"Ok":{"Id":74}}]
+16:12:10 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 75,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:10 -> [{"Ok":{"Id":75}}]
+16:12:10 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 76,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:10 -> [{"Ok":{"Id":76}}]
+16:12:10 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 77,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:10 -> [{"Ok":{"Id":77}}]
+16:12:10 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 78,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:10 -> [{"Ok":{"Id":78}}]
+16:12:11 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 79,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:11 -> [{"Ok":{"Id":79}}]
+16:12:11 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 80,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:11 -> [{"Ok":{"Id":80}}]
+16:12:11 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 81,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:11 -> [{"Ok":{"Id":81}}]
+16:12:11 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 82,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:11 -> [{"Ok":{"Id":82}}]
+16:12:12 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 83,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:12 -> [{"Ok":{"Id":83}}]
+16:12:12 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 84,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:12 -> [{"Ok":{"Id":84}}]
+16:12:12 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 85,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:12 -> [{"Ok":{"Id":85}}]
+16:12:12 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 86,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 250,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:12 -> [{"Ok":{"Id":86}}]
+16:12:12 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 87,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:12 -> [{"Ok":{"Id":87}}]
+16:12:14 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 88,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 280,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:14 -> [{"Ok":{"Id":88}}]
+16:12:14 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 89,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:14 -> [{"Ok":{"Id":89}}]
+16:12:15 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 90,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:15 -> [{"Ok":{"Id":90}}]
+16:12:15 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 91,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 280,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:15 -> [{"Ok":{"Id":91}}]
+16:12:15 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 92,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:15 -> [{"Ok":{"Id":92}}]
+16:12:15 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 93,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:15 -> [{"Ok":{"Id":93}}]
+16:12:15 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 94,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 280,
+					"Position": 0.5
+				}
+			]
+		}
+	}
+]
+16:12:15 -> [{"Ok":{"Id":94}}]
+16:12:15 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 95,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:15 -> [{"Ok":{"Id":95}}]
+16:12:15 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 96,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:15 -> [{"Ok":{"Id":96}}]
+16:12:15 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 97,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 700,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:15 -> [{"Ok":{"Id":97}}]
+16:12:15 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 98,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:15 -> [{"Ok":{"Id":98}}]
+16:12:15 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 99,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:15 -> [{"Ok":{"Id":99}}]
+16:12:19 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:12:28 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 100,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 2891,
+					"Position": 0
+				}
+			]
+		}
+	}
+]
+16:12:28 -> [{"Ok":{"Id":100}}]
+16:12:28 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 101,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:28 -> [{"Ok":{"Id":101}}]
+16:12:29 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 102,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:29 -> [{"Ok":{"Id":102}}]
+16:12:29 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:12:31 <- [
+	{
+		"LinearCmd":
+		{
+			"Id": 103,
+			"DeviceIndex": 0,
+			"Vectors": [
+				{
+					"Index": 0,
+					"Duration": 2093,
+					"Position": 1
+				}
+			]
+		}
+	}
+]
+16:12:31 -> [{"Ok":{"Id":103}}]
+16:12:31 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 104,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 1,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:31 -> [{"Ok":{"Id":104}}]
+16:12:32 <- [
+	{
+		"ScalarCmd":
+		{
+			"Id": 105,
+			"DeviceIndex": 0,
+			"Scalars": [
+				{
+					"Index": 0,
+					"Scalar": 0,
+					"ActuatorType": "Vibrate"
+				}
+			]
+		}
+	}
+]
+16:12:32 -> [{"Ok":{"Id":105}}]
+16:12:39 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:12:49 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:12:59 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:13:09 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:13:20 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:13:30 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:13:40 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:13:50 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:14:00 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:14:10 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:14:21 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:14:31 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:14:41 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:14:51 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:15:01 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:15:11 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:15:22 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:15:32 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:15:42 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
+16:15:52 VacuGlide not reachable: device offline (hold the mode button 2.5 s to put it online) (retrying)
