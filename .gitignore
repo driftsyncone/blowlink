@@ -1,1 +1,7 @@
-vacuglide-bridge
+node_modules/
+out/
+dist/
+*.log
+!testdata/*.log
+shotdata/
+.shot/

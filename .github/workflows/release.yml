@@ -1,0 +1,184 @@
+# Push a tag like v0.2.0 (matching package.json "version") to build Windows, Linux and
+# macOS packages and publish a GitHub Release with SHA256SUMS. The release notes are that
+# version's section of CHANGELOG.md (the release fails early if it's missing). Versions
+# with a hyphen (v0.2.0-beta.1) are prereleases. Builds are not code-signed.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  notes:
+    name: Check version + release notes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      notes: ${{ steps.notes.outputs.text }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Tag must match package.json version
+        run: |
+          v="v$(node -p "require('./package.json').version")"
+          if [ "$v" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $v"
+            exit 1
+          fi
+      - name: Release notes from CHANGELOG.md
+        id: notes
+        run: |
+          if ! notes="$(node scripts/changelog.mjs "$GITHUB_REF_NAME")"; then
+            echo "::error::Add a '## ${GITHUB_REF_NAME#v}' section to CHANGELOG.md before tagging"
+            exit 1
+          fi
+          { echo 'text<<BLOWLINK_NOTES_EOF'; echo "$notes"; echo 'BLOWLINK_NOTES_EOF'; } >> "$GITHUB_OUTPUT"
+
+  windows:
+    name: Windows
+    needs: notes
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node node_modules/electron/install.js
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run dist:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Verify Electron fuses
+        shell: bash
+        run: |
+          npx @electron/fuses read --app dist/win-unpacked/BlowLink.exe | tee fuses.txt
+          grep -q 'RunAsNode is Disabled' fuses.txt
+          grep -q 'OnlyLoadAppFromAsar is Enabled' fuses.txt
+      - name: Test the installer (per-user, no admin, clean uninstall)
+        shell: pwsh
+        run: ./scripts/test-installer.ps1 -Setup (Get-ChildItem dist/BlowLink-Setup-*.exe).FullName
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows
+          path: |
+            dist/BlowLink-Setup-*.exe
+            dist/BlowLink-*-win-*.zip
+          retention-days: 7
+          if-no-files-found: error
+
+  linux:
+    name: Linux
+    needs: notes
+    # oldest supported runner keeps the glibc requirement low
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node node_modules/electron/install.js
+      - run: npm test
+      - run: npm run dist:linux
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: linux
+          path: |
+            dist/BlowLink-*.AppImage
+            dist/BlowLink-*.tar.gz
+            dist/blowlink_*.deb
+          retention-days: 7
+          if-no-files-found: error
+
+  mac:
+    name: macOS (best effort)
+    needs: notes
+    runs-on: macos-latest
+    timeout-minutes: 30
+    # Unsigned/unnotarised macOS builds are a bonus; a failure here doesn't block the release.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node node_modules/electron/install.js
+      - run: npm run build && npx electron-builder --mac --arm64 --x64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mac
+          path: dist/BlowLink-*-mac-*.dmg
+          retention-days: 7
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release
+    needs: [notes, windows, linux, mac]
+    if: ${{ !cancelled() && needs.windows.result == 'success' && needs.linux.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # the only job that can write to the repo, and it runs no project code
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: release
+          merge-multiple: true
+      - name: Checksums
+        run: cd release && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          # from the notes job (CHANGELOG.md); passed as data, never run
+          CHANGES: ${{ needs.notes.outputs.notes }}
+        run: |
+          v="${TAG#v}"
+          pre=""
+          [[ "$TAG" == *-* ]] && pre="--prerelease"
+          mac_line="**macOS:** \`BlowLink-$v-mac-arm64.dmg\` (Apple Silicon) or \`-x64.dmg\` (Intel). Not notarised: the first time, right-click the app → Open. If macOS says it is damaged, run \`xattr -dr com.apple.quarantine /Applications/BlowLink.app\`."
+          ls release/*-mac-* >/dev/null 2>&1 || mac_line="**macOS:** no build this time."
+          {
+            echo "$CHANGES"
+            echo
+            echo "### Install"
+            echo
+            echo "**Windows:** run \`BlowLink-Setup-$v.exe\`. It installs just for you (no admin prompt) and adds a Start menu shortcut. Settings and tokens are kept across upgrades and uninstall. Or unzip \`BlowLink-$v-win-x64.zip\` and run \`BlowLink.exe\`. The builds aren't code-signed, so SmartScreen asks: *More info → Run anyway*."
+            echo
+            echo "**Linux:** \`BlowLink-$v-linux-x86_64.AppImage\` (\`chmod +x\`, then run it), \`blowlink_${v}_amd64.deb\`, or the \`.tar.gz\`."
+            echo
+            echo "$mac_line"
+            echo
+            echo "Close Intiface Central first if you use Buttplug mode (both use port 12345), or use Intiface mode instead."
+            echo
+            echo "Verify downloads against \`SHA256SUMS.txt\` (\`sha256sum -c SHA256SUMS.txt\`, or \`Get-FileHash\` on Windows)."
+          } > notes.md
+          gh release create "$TAG" release/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "BlowLink $v" \
+            --notes-file notes.md $pre

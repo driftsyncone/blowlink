@@ -1,0 +1,46 @@
+{
+  "name": "blowlink",
+  "version": "0.1.0",
+  "productName": "BlowLink",
+  "description": "Connect Intiface/Buttplug games to Autoblow devices",
+  "license": "CC-BY-NC-SA-4.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build && node scripts/notices.mjs",
+    "start": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test test/*.test.mts",
+    "cli": "tsx src/cli/index.ts",
+    "icons": "python3 scripts/make-icons.py",
+    "dist:linux": "npm run build && electron-builder --linux --x64 --publish never",
+    "dist:win": "npm run build && electron-builder --win --x64 --publish never",
+    "dist:mac": "npm run build && electron-builder --mac --publish never"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/ws": "^8.18.1",
+    "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^44.9.3",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^6.0.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5"
+  },
+  "main": "out/main/index.js",
+  "author": {
+    "name": "DriftSyncOne",
+    "email": "333997838+driftsyncone@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/driftsyncone/blowlink",
+  "desktopName": "blowlink.desktop"
+}

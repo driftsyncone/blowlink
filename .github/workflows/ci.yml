@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, test, build, screenshot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: node node_modules/electron/install.js
+      - run: npm run typecheck
+      - run: npm test
+      - name: CHANGELOG.md has notes for this version
+        run: node scripts/changelog.mjs "$(node -p "require('./package.json').version")" > /dev/null
+      - name: Dependency audit (shipped code only)
+        run: npm audit --omit=dev --audit-level=moderate
+      - run: npm run build
+
+      # Starts the app (dry run, sample devices) and saves a screenshot of the window.
+      - name: App starts and renders
+        timeout-minutes: 5
+        run: |
+          # Ubuntu 24.04 blocks the user namespaces Chromium's sandbox needs
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          mkdir -p .shot
+          echo '{"dry":true,"buttplug":{"port":12399},"devices":[{"id":"vacuglide","name":"Autoblow VacuGlide","type":"vacuglide","token":"dummy-token"}]}' > .shot/config.json
+          BLOWLINK_DATA=$PWD/.shot BLOWLINK_SHOT=$PWD/.shot/window.png timeout 120 xvfb-run -a npx electron . --disable-gpu
+          test -s .shot/window.png
+
+      - name: Upload screenshot
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screenshot
+          path: .shot/window.png
+          retention-days: 14
+          if-no-files-found: ignore
+
+  windows:
+    name: Windows build + installer test
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: node node_modules/electron/install.js
+      - run: npm test
+      - run: npm run dist:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Verify Electron fuses
+        shell: bash
+        run: |
+          npx @electron/fuses read --app dist/win-unpacked/BlowLink.exe | tee fuses.txt
+          grep -q 'RunAsNode is Disabled' fuses.txt
+          grep -q 'OnlyLoadAppFromAsar is Enabled' fuses.txt
+      - name: Test the installer (per-user, no admin, clean uninstall)
+        shell: pwsh
+        run: ./scripts/test-installer.ps1 -Setup (Get-ChildItem dist/BlowLink-Setup-*.exe).FullName
