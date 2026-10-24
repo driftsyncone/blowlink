@@ -2,6 +2,10 @@
 
 Each release's notes come from its section here (the release workflow fails without one).
 
+## Unreleased
+
+- The Intiface setup steps in the app now match Intiface Central 3 (the Device Websocket Server switch is under App Modes, with advanced settings shown and the server stopped).
+
 ## 0.2.0
 
 **Smoother, calmer device control**

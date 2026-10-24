@@ -268,7 +268,7 @@ function showWindow(): void {
         writeFileSync(shotPath, img.toPNG())
         quitting = true
         app.quit()
-      }, 1500)
+      }, Number(process.env.BLOWLINK_SHOT_DELAY ?? 1500))
     )
   if (process.env.ELECTRON_RENDERER_URL) win.loadURL(process.env.ELECTRON_RENDERER_URL)
   else win.loadFile(join(import.meta.dirname, '../renderer/index.html'))

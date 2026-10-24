@@ -191,7 +191,7 @@ function DeviceCard({ device: d, live, config }: { device: DeviceView; live?: Br
           <p>One-time setup in Intiface Central:</p>
           <ol>
             <li>
-              Settings → turn on <b>Device Websocket Server</b>.
+              Stop the server, then App Modes → <b>Show Advanced/Experimental Settings</b> → turn on <b>Device Websocket Server</b>.
             </li>
             <li>
               Devices → add a websocket device: protocol <code>tcode-v03</code>, name{' '}
