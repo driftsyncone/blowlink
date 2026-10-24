@@ -5,7 +5,10 @@ import { readFileSync } from 'node:fs'
 const version = (process.argv[2] ?? '').replace(/^v/, '')
 const text = readFileSync(new URL('../CHANGELOG.md', import.meta.url), 'utf8')
 const lines = text.split(/\r?\n/)
-const start = lines.findIndex((l) => l.trim() === `## ${version}`)
+// Dev builds (x.y.z-dev.n) use the x.y.z section, else "## Unreleased".
+const heads = [version, ...(version.includes('-') ? [version.split('-')[0], 'Unreleased'] : [])]
+let start = -1
+for (const h of heads) if (start < 0) start = lines.findIndex((l) => l.trim() === `## ${h}`)
 if (!version || start < 0) {
   console.error(`CHANGELOG.md has no "## ${version}" section`)
   process.exit(1)

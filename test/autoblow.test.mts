@@ -37,15 +37,14 @@ test('cluster names only resolve to autoblowapi.com', () => {
   assert.throws(() => clusterUrl('evil.example.com'))
 })
 
-test('VacuGlide: discovers, sends speeds with the token, stops, rediscovers after 502', async () => {
+test('VacuGlide: connects once, sends speeds, goes offline on 502 and stays quiet until Connect', async () => {
   let online = true
   const api = await fakeApi((req) => {
     assert.equal(req.headers['x-device-token'], 'tok')
-    if (req.url === '/vacuglide/connected') return [200, { connected: true, cluster: fake.url, deviceType: 'vacuglide' }]
+    if (req.url === '/vacuglide/connected') return [200, { connected: online, cluster: api.url, deviceType: 'vacuglide' }]
     if (!online) return [502, { error: 'DeviceNotConnectedError' }]
     return [200, { success: true }]
   })
-  const fake = api
   const dev = new VacuGlide(
     'vacuglide',
     'VG',
@@ -57,17 +56,45 @@ test('VacuGlide: discovers, sends speeds with the token, stops, rediscovers afte
   dev.level(0.5)
   await waitFor(() => api.seen.includes('PUT /vacuglide/target-speed {"targetSpeed":50}'))
   assert.equal(api.seen[0], 'GET /vacuglide/connected')
-  assert.equal(dev.status.online, true)
 
   online = false
   dev.level(0.8)
-  await waitFor(() => dev.status.error?.includes('502') ?? false)
+  await waitFor(() => dev.status.online === false)
+  const calls = api.seen.length
+  dev.level(0.3)
+  await new Promise((r) => setTimeout(r, 300))
+  assert.equal(api.seen.length, calls, 'no calls while offline')
+
+  await dev.connect() // still offline: one discovery, no retries
+  assert.equal(dev.status.online, false)
+  assert.equal(api.seen.length, calls + 1)
+
   online = true
-  await waitFor(() => dev.status.error === undefined && dev.status.output === 80, 5000)
-  assert.ok(api.seen.filter((s) => s === 'GET /vacuglide/connected').length >= 2, 'rediscovered after 502')
+  await dev.connect()
+  await waitFor(() => api.seen.includes('PUT /vacuglide/target-speed {"targetSpeed":30}'))
+  assert.equal(dev.status.online, true)
 
   await dev.close()
   assert.equal(api.seen.at(-1), 'PUT /vacuglide/target-speed/stop')
+  api.close()
+})
+
+test('429: waits as long as Autoblow says', async () => {
+  let n = 0
+  const times: number[] = []
+  const api = await fakeApi((req) => {
+    if (req.url === '/vacuglide/connected') return [200, { connected: true, cluster: api.url, deviceType: 'vacuglide' }]
+    times.push(Date.now())
+    if (n++ === 0) return [429, { error: { code: 'Error', message: 'Rate limit exceeded, retry in 1 seconds' } }]
+    return [200, { success: true }]
+  })
+  const dev = new VacuGlide('vacuglide', 'VG', new AutoblowApi('tok', { discoveryUrl: api.url }), { ...defaultMotorOptions, intervalMs: 20 }, realClock)
+  dev.start()
+  dev.level(0.5)
+  await waitFor(() => times.length >= 2, 3000)
+  assert.ok(times[1] - times[0] >= 950, `retried after ${times[1] - times[0]} ms`)
+  assert.equal(dev.status.online, true, '429 is not offline')
+  await dev.close()
   api.close()
 })
 

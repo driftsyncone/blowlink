@@ -72,7 +72,18 @@ export class AutoblowApi {
     const t = typeof d.deviceType === 'string' ? d.deviceType : ''
     if (t && t !== type) throw new Error(`token is for a ${t}, not a ${type}`)
     this.deviceType = t || type
-    this.host = clusterUrl(typeof d.cluster === 'string' ? d.cluster : '')
+    this.host = clusterUrl(typeof d.cluster === 'string' ? d.cluster : '', this.testOrigin())
+  }
+
+  // A non-default discovery URL is a test API (e.g. the Autoblow emulator); its
+  // own origin is then accepted as the cluster.
+  private testOrigin(): string | undefined {
+    if (this.discoveryUrl === 'https://latency.autoblowapi.com') return undefined
+    try {
+      return new URL(this.discoveryUrl).origin
+    } catch {
+      return undefined
+    }
   }
 
   // put sends a command to the device's cluster, discovering it first if needed.
@@ -83,10 +94,17 @@ export class AutoblowApi {
 }
 
 // clusterUrl turns the cluster name from /connected into a base URL. The token
-// only ever goes to autoblowapi.com hosts; plain http:// is only accepted for
-// local hosts (the test fake).
-export function clusterUrl(c: string): string {
+// only ever goes to autoblowapi.com hosts, local test hosts, or the test API the
+// user configured (testOrigin).
+export function clusterUrl(c: string, testOrigin?: string): string {
   if (/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(c)) return c
+  if (testOrigin) {
+    try {
+      if (new URL(c).origin === testOrigin) return testOrigin
+    } catch {
+      // not a URL; fall through
+    }
+  }
   c = c.replace(/^https?:\/\//, '').replace(/\/+$/, '')
   if (!c.includes('.')) c += '.autoblowapi.com'
   if (!/^[a-z0-9-]+\.autoblowapi\.com$/i.test(c)) throw new Error(`unexpected cluster ${JSON.stringify(c)}`)

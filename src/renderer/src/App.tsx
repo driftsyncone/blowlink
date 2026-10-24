@@ -58,10 +58,24 @@ export function App() {
 
       {update && (
         <div className="card update">
-          BlowLink {update.version} is available.{' '}
-          <a href="#" onClick={(e) => (e.preventDefault(), api.openUpdate())}>
-            Open the release page
-          </a>
+          <span>
+            BlowLink {update.version} is available.{' '}
+            <a href="#" onClick={(e) => (e.preventDefault(), api.openUpdate())}>
+              {update.installable ? 'What’s new' : 'Open the release page'}
+            </a>
+          </span>
+          {update.installable && (
+            <button disabled={!!update.busy} onClick={() => api.installUpdate()}>
+              {update.busy ?? 'Install and restart'}
+            </button>
+          )}
+          {update.error && <span className="error">Update failed: {update.error}</span>}
+        </div>
+      )}
+
+      {config.apiUrl && (
+        <div className="card testapi">
+          Test mode: talking to <code>{config.apiUrl}</code> instead of Autoblow. Clear it in Settings to use real devices.
         </div>
       )}
 
@@ -76,7 +90,7 @@ export function App() {
         <AddDevice />
       </section>
 
-      <SettingsCard config={config} autostart={snap.autostart} />
+      <SettingsCard config={config} autostart={snap.autostart} logFile={snap.logFile} />
       <LogCard logs={logs} />
     </div>
   )
@@ -84,8 +98,6 @@ export function App() {
 
 function ServerCard({ state, config }: { state: BridgeState; config: ConfigView }) {
   const b = state.buttplug
-  const [port, setPort] = useState(String(config.buttplug.port))
-  useEffect(() => setPort(String(config.buttplug.port)), [config.buttplug.port])
   return (
     <section className="card">
       <div className="row between">
@@ -104,22 +116,6 @@ function ServerCard({ state, config }: { state: BridgeState; config: ConfigView 
             Intiface mode on your devices instead.
           </p>
         ))}
-      {config.buttplug.enabled && (
-        <label className="inline">
-          Port
-          <input
-            className="narrow"
-            value={port}
-            inputMode="numeric"
-            onChange={(e) => setPort(e.target.value.replace(/\D/g, ''))}
-            onBlur={() => {
-              const p = Number(port)
-              if (p > 0 && p < 65536 && p !== config.buttplug.port) api.updateConfig({ buttplug: { ...config.buttplug, port: p } })
-              else setPort(String(config.buttplug.port))
-            }}
-          />
-        </label>
-      )}
     </section>
   )
 }
@@ -152,17 +148,27 @@ function DeviceCard({ device: d, live, config }: { device: DeviceView; live?: Br
           keep Stop all handy.
         </p>
       )}
-      <div className="status">
-        <Dot ok={live?.status.online} />
-        <span>{live?.status.online ? 'Online' : 'Offline'}</span>
-        {live?.status.error && <span className="err"> · {live.status.error}</span>}
+      <div className="status row">
+        <span>
+          <Dot ok={live?.status.online} />
+          {live?.status.connecting ? 'Connecting…' : live?.status.online ? 'Online' : 'Offline'}
+          {live?.status.error && <span className="err"> · {live.status.error}</span>}
+        </span>
+        {!live?.status.online && !live?.status.connecting && (
+          <button className="small" onClick={() => api.connectDevice(d.id)}>
+            Connect
+          </button>
+        )}
       </div>
+      {!live?.status.online && !live?.status.connecting && (
+        <p className="muted small">Put the device in online mode (hold its mode button 2.5 s), then press Connect.</p>
+      )}
       <div className="meter" title={`${out}%`}>
         <div style={{ width: `${out}%` }} />
         <span>{out}%</span>
       </div>
 
-      <div className="modes">
+      <div className="modes two">
         <label className="check">
           <input type="checkbox" checked={d.buttplug} onChange={(e) => update({ buttplug: e.target.checked })} />
           List in Buttplug mode
@@ -215,10 +221,12 @@ function DeviceCard({ device: d, live, config }: { device: DeviceView; live?: Br
               onChange={(e) => update({ maxVacuumKpa: Number(e.target.value) })}
             />
           </label>
-          <p className="muted small">
-            Levels hold a vacuum up to this limit; stroke rhythm pulses between it and 0 kPa. Every stop releases the vacuum.
-          </p>
         </div>
+      ) : null}
+      {d.type === 'vacupump' ? (
+        <p className="muted small">
+          Levels hold a vacuum up to this limit; stroke rhythm pulses between it and 0 kPa. Every stop releases the vacuum.
+        </p>
       ) : (
         <div className="grid">
           <label>
@@ -229,8 +237,8 @@ function DeviceCard({ device: d, live, config }: { device: DeviceView; live?: Br
             <label>
               Motion
               <select value={d.motion} onChange={(e) => update({ motion: e.target.value as DeviceView['motion'] })}>
-                <option value="oscillate">Oscillate to the rhythm (smooth, no lag)</option>
-                <option value="goto">Follow each move (cloud lag)</option>
+                <option value="oscillate">Oscillate to the rhythm</option>
+                <option value="goto">Follow each move (laggy)</option>
               </select>
             </label>
           ) : (
@@ -321,10 +329,16 @@ function AddDevice() {
   )
 }
 
-function SettingsCard({ config, autostart }: { config: ConfigView; autostart: boolean }) {
+function SettingsCard({ config, autostart, logFile }: { config: ConfigView; autostart: boolean; logFile: string }) {
   const [auto, setAuto] = useState(autostart)
   const [url, setUrl] = useState(config.intiface.url)
+  const [apiUrl, setApiUrl] = useState(config.apiUrl)
+  const [checking, setChecking] = useState(false)
+  const [checked, setChecked] = useState('')
+  const [port, setPort] = useState(String(config.buttplug.port))
+  useEffect(() => setPort(String(config.buttplug.port)), [config.buttplug.port])
   useEffect(() => setUrl(config.intiface.url), [config.intiface.url])
+  useEffect(() => setApiUrl(config.apiUrl), [config.apiUrl])
   return (
     <section className="card">
       <h2>Settings</h2>
@@ -343,14 +357,68 @@ function SettingsCard({ config, autostart }: { config: ConfigView; autostart: bo
         <input type="checkbox" checked={config.checkUpdates} onChange={(e) => api.setCheckUpdates(e.target.checked)} />
         Tell me when a new version is out (checks GitHub once a day)
       </label>
-      <label>
-        Intiface device websocket server
-        <input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onBlur={() => /^wss?:\/\/\S+$/.test(url) && url !== config.intiface.url && api.updateConfig({ intiface: { url } })}
-        />
-      </label>
+      <div className="row">
+        <button
+          disabled={checking}
+          onClick={async () => {
+            setChecking(true)
+            setChecked('')
+            const r = await api.checkUpdatesNow()
+            setChecking(false)
+            setChecked(r.error ? `Couldn't check: ${r.error}` : r.found ? 'A new version is out, see the top of the window.' : 'BlowLink is up to date.')
+          }}
+        >
+          {checking ? 'Checking…' : 'Check for updates now'}
+        </button>
+        {checked && <span className="muted">{checked}</span>}
+      </div>
+      <details className="advanced">
+        <summary>Advanced</summary>
+        <label className="inline">
+          Buttplug port
+          <input
+            className="narrow"
+            value={port}
+            inputMode="numeric"
+            onChange={(e) => setPort(e.target.value.replace(/\D/g, ''))}
+            onBlur={() => {
+              const p = Number(port)
+              if (p > 0 && p < 65536 && p !== config.buttplug.port) api.updateConfig({ buttplug: { ...config.buttplug, port: p } })
+              else setPort(String(config.buttplug.port))
+            }}
+          />
+          <span className="muted small">Intiface's default is 12345</span>
+        </label>
+        <label className="check">
+          <input type="checkbox" checked={config.verbose} onChange={(e) => api.updateConfig({ verbose: e.target.checked })} />
+          Log game messages (for troubleshooting)
+        </label>
+        <p className="muted small">
+          Log file: <code>{logFile}</code>{' '}
+          <a href="#" onClick={(e) => (e.preventDefault(), api.openLogFolder())}>
+            Show
+          </a>
+        </p>
+        <label>
+          Intiface device websocket server
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onBlur={() => /^wss?:\/\/\S+$/.test(url) && url !== config.intiface.url && api.updateConfig({ intiface: { url } })}
+          />
+        </label>
+        <label>
+          Autoblow API URL <span className="muted small">(testing only; empty = real devices)</span>
+          <input
+            value={apiUrl}
+            placeholder="https://latency.autoblowapi.com"
+            onChange={(e) => setApiUrl(e.target.value)}
+            onBlur={() =>
+              (apiUrl === '' || /^https?:\/\/\S+$/.test(apiUrl)) && apiUrl !== config.apiUrl && api.updateConfig({ apiUrl })
+            }
+          />
+        </label>
+      </details>
     </section>
   )
 }

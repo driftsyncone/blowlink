@@ -20,6 +20,7 @@ Connects Intiface/Buttplug games to Autoblow devices.
   --max N            speed cap in percent (default 100)
   --min N            lowest non-zero speed in percent (default 5)
   --map MODE         velocity (default) or tempo
+  --api-url URL      Autoblow API to use instead of the real one (e.g. the Autoblow emulator)
   --dry              log speeds instead of calling the API
   -v                 log every protocol message
 `
@@ -55,6 +56,7 @@ const { values: a } = parseArgs({
     max: { type: 'string' },
     min: { type: 'string' },
     map: { type: 'string' },
+    'api-url': { type: 'string' },
     dry: { type: 'boolean' },
     v: { type: 'boolean', short: 'v' },
     help: { type: 'boolean', short: 'h' }
@@ -74,6 +76,7 @@ if (a.addr) {
 if (a['no-buttplug']) cfg.buttplug.enabled = false
 if (a['intiface-url']) cfg.intiface.url = a['intiface-url']
 if (a.dry) cfg.dry = true
+if (a['api-url']) cfg.apiUrl = a['api-url']
 if (a.v) cfg.verbose = true
 
 // Flags describe one VacuGlide, like the old vacuglide-bridge.

@@ -1,6 +1,11 @@
 // Shared plumbing for the Autoblow devices: a Motor turns strokes/levels into a
 // level, the subclass turns that into a device command, and a Pacer sends it
-// through the cloud API with backoff and rediscovery.
+// through the cloud API.
+//
+// Connecting is deliberate, not automatic: one attempt when the device starts and
+// one each time the user presses Connect. A device that is offline or drops off
+// (HTTP 502) stays offline until then, so an offline device doesn't run into
+// Autoblow's rate limit.
 import { ApiError, type AutoblowApi, type DeviceType } from './autoblow.ts'
 import type { Clock } from './clock.ts'
 import { Device } from './device.ts'
@@ -15,6 +20,9 @@ export abstract class CloudDevice<Cmd> extends Device {
   protected motor: Motor
   protected pacer: Pacer<Cmd>
   private lastErrLog = 0
+  private connecting = false
+  private closed = false
+  private failures = 0 // consecutive failed commands (not counting 429)
 
   // api null = dry run: log commands instead of calling the API.
   constructor(
@@ -54,6 +62,34 @@ export abstract class CloudDevice<Cmd> extends Device {
 
   start(): void {
     this.pacer.start()
+    void this.connect()
+  }
+
+  // connect makes one discovery attempt. No automatic retries.
+  async connect(): Promise<void> {
+    if (!this.api) {
+      this.setStatus({ online: true, connecting: false })
+      return
+    }
+    if (this.connecting || this.closed) return
+    this.connecting = true
+    this.setStatus({ connecting: true, error: undefined })
+    try {
+      await this.api.discover(this.type)
+      if (this.closed) return // closed meanwhile (settings change restarted the bridge)
+      this.failures = 0
+      this.log(`connected via ${this.api.host}`)
+      this.setStatus({ online: true, connecting: false, error: undefined })
+      this.pacer.reset() // send whatever is wanted now
+      this.pacer.wake()
+    } catch (e) {
+      this.api.host = ''
+      const msg = e instanceof Error ? e.message : String(e)
+      this.log(`not connected (${msg}); press Connect to try again`)
+      this.setStatus({ online: false, connecting: false, error: msg })
+    } finally {
+      this.connecting = false
+    }
   }
 
   stroke(pos: number, durMs: number): void {
@@ -69,6 +105,7 @@ export abstract class CloudDevice<Cmd> extends Device {
   }
 
   async close(): Promise<void> {
+    this.closed = true
     this.pacer.stop()
     this.motor.stop()
     if (this.api?.host) await this.dispatch(this.stopCommand()).catch(() => {})
@@ -80,17 +117,31 @@ export abstract class CloudDevice<Cmd> extends Device {
       this.setStatus({ online: true, output: this.output(c) })
       return
     }
-    const wasOnline = this.api.host !== ''
+    if (!this.api.host) return // offline: nothing is sent until the user connects
+    if (this.verbose) this.log(`-> ${this.describe(c)}`)
     await this.send(this.api, c)
-    if (!wasOnline) this.log(`connected via ${this.api.host}`)
+    this.failures = 0
     this.setStatus({ online: true, error: undefined, output: this.output(c) })
   }
 
   private failed(err: unknown): void {
     const msg = err instanceof Error ? err.message : String(err)
-    if (err instanceof ApiError && err.status === 429) this.pacer.delay(1000)
-    else if (!this.api?.host) this.pacer.delay(2000) // offline: retry discovery every 2 s
-    this.setStatus({ online: !!this.api?.host, error: msg })
+    if (err instanceof ApiError && err.status === 429) {
+      // Autoblow says how long to wait: "Rate limit exceeded, retry in 4 seconds".
+      const s = /retry in (\d+) second/i.exec(msg)
+      this.pacer.delay(s ? Number(s[1]) * 1000 : 5000)
+    } else if (this.api?.host && ++this.failures >= 3) {
+      this.api.host = '' // keeps failing (network?): give up until the user connects
+    } else if (this.api?.host) {
+      this.pacer.delay(2000 * this.failures)
+    }
+    if (this.api && !this.api.host) {
+      // 502 (device dropped off) clears host too
+      this.log(`went offline (${msg}); press Connect to try again`)
+      this.setStatus({ online: false, error: msg })
+      return
+    }
+    this.setStatus({ error: msg })
     const now = this.clock.now()
     if (now - this.lastErrLog > 10_000) {
       this.log(msg)

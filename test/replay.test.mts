@@ -42,21 +42,55 @@ async function replay(mapping: 'velocity' | 'tempo'): Promise<number[]> {
   return speeds
 }
 
-test('replay, velocity mapping matches the Go bridge', async () => {
+test('replay (Alternating), velocity mapping', async () => {
   const speeds = await replay('velocity')
-  // Go bridge on the same recording (NOTES, 2026-10-16): 5 21 28 33 19 11, then stop.
+  // Pace averaged over two full strokes / at least 0.5 s (0.2.0). The Go bridge gave 5 21 28 33 19 11.
   assert.deepEqual(
     speeds.filter((v) => v > 0),
-    [5, 21, 28, 33, 19, 11]
+    [10, 23, 29, 16]
   )
   assert.equal(speeds.at(-1), 0, 'stops after the last stroke')
 })
 
-test('replay, tempo mapping matches the Go bridge', async () => {
+test('replay (Alternating), tempo mapping', async () => {
   const speeds = await replay('tempo')
-  // Go bridge: 5 30 42 47 26 10 5, then stop.
+  // The Go bridge gave 5 30 42 47 26 10 5.
   assert.deepEqual(
     speeds.filter((v) => v > 0),
-    [5, 30, 42, 47, 26, 10, 5]
+    [5, 33, 42, 48, 37, 19]
   )
 })
+
+// Full Cycle capture: the game's strokes arrive with tens of ms of jitter. Speed
+// must not flip with every stroke (it did with per-move speeds: 86/95/100…).
+async function replayCapture(mapping: 'velocity' | 'tempo') {
+  const { messages } = JSON.parse(readFileSync(new URL('../testdata/cockhero-fullcycle.json', import.meta.url), 'utf8'))
+  const clock = new FakeClock()
+  const dev = new VacuGlide('vacuglide', 'VG', null, { ...defaultMotorOptions, mapping, intervalMs: 200 }, clock)
+  const sent: [number, number][] = []
+  dev.on('log', (l) => {
+    const m = /speed (\d+)%/.exec(l)
+    if (m) sent.push([clock.t, Number(m[1])])
+  })
+  dev.start()
+  const s = new Session(() => [dev], () => {})
+  for (const [at, type, body] of messages) {
+    await clock.advance(Math.max(0, at - clock.t))
+    s.handle(type, { ...body, DeviceIndex: 0 })
+  }
+  await clock.advance(5000)
+  await dev.close()
+  return sent
+}
+
+for (const mapping of ['velocity', 'tempo'] as const) {
+  test(`capture (Full Cycle), ${mapping}: steady in the fast part, few calls`, async () => {
+    const sent = await replayCapture(mapping)
+    assert.ok(sent.length <= 24, `${sent.length} calls`)
+    // fast section: full strokes every ~130 ms from 82.9 s to 88.4 s (after a short ramp-up)
+    const fast = sent.filter(([t]) => t > 83_700 && t < 88_400).map(([, v]) => v)
+    assert.ok(fast.every((v) => v >= 95), `fast part: ${fast.join(' ')}`)
+    assert.ok(fast.length <= 1, `fast part flips: ${fast.join(' ')}`)
+    assert.equal(sent.at(-1)?.[1], 0, 'ends stopped')
+  })
+}

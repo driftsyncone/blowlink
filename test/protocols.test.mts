@@ -1,13 +1,16 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { once } from 'node:events'
+import { readFileSync } from 'node:fs'
 import WebSocket, { WebSocketServer } from 'ws'
 import { ButtplugServer } from '../src/core/buttplug.ts'
 import { realClock } from '../src/core/clock.ts'
 import { Device } from '../src/core/device.ts'
 import { IntifaceLink } from '../src/core/intiface.ts'
+import { defaultMotorOptions } from '../src/core/motor.ts'
 import { parseTCode } from '../src/core/tcode.ts'
-import { waitFor } from './helpers.mts'
+import { VacuGlide } from '../src/core/vacuglide.ts'
+import { FakeClock, waitFor } from './helpers.mts'
 
 // Records what the inputs ask of a device.
 class SpyDevice extends Device {
@@ -26,6 +29,7 @@ class SpyDevice extends Device {
     return { LinearCmd: [{ FeatureDescriptor: 'Stroke', StepCount: 100, ActuatorType: 'Position' }], StopDeviceCmd: {} }
   }
   start() {}
+  async connect() {}
   async close() {}
 }
 
@@ -81,4 +85,29 @@ test('Intiface link: handshake, TCode to strokes, stop when Intiface goes away',
   await waitFor(() => dev.calls.at(-1) === 'stop')
   link.close()
   wsdm.close()
+})
+
+test('Intiface position streaming (TCode without durations) adds up small steps', async () => {
+  // Captured from Intiface Central 3.2.2: slider sweeps sent as ~30 positions a
+  // second ("L0715\nR0715\n"), each step under 5 %, then 3 s strokes ("L0000I3000").
+  const { messages } = JSON.parse(readFileSync(new URL('../testdata/intiface-tcode.json', import.meta.url), 'utf8'))
+  const clock = new FakeClock()
+  const dev = new VacuGlide('vacuglide', 'VG', null, { ...defaultMotorOptions, intervalMs: 200 }, clock)
+  const sent: [number, number][] = []
+  dev.on('log', (l) => {
+    const m = /speed (\d+)%/.exec(l)
+    if (m) sent.push([clock.t, Number(m[1])])
+  })
+  dev.start()
+  for (const [at, text] of messages) {
+    await clock.advance(Math.max(0, at - clock.t))
+    for (const mv of parseTCode(text)) if (mv.axis === 'L0') dev.stroke(mv.pos, mv.intervalMs ?? 0)
+  }
+  await clock.advance(5000)
+  await dev.close()
+  // Before: the sweeps gave 27 → 12 → 5 %, most steps dropped as "too small".
+  const sweeps = sent.filter(([t]) => t > 2000 && t < 6000).map(([, v]) => v)
+  assert.ok(Math.max(...sweeps) >= 30, `sweeps: ${sweeps.join(' ')}`)
+  assert.ok(sweeps.filter((v) => v > 0).length >= 4, `sweeps follow the slider: ${sweeps.join(' ')}`)
+  assert.equal(sent.at(-1)?.[1], 0)
 })

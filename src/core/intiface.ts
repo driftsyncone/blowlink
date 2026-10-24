@@ -75,6 +75,10 @@ export class IntifaceLink {
     })
   }
 
+  setVerbose(on: boolean): void {
+    this.opts.verbose = on
+  }
+
   close(): void {
     this.closed = true
     this.clock.clearTimeout(this.retry)

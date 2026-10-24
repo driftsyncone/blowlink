@@ -1,6 +1,6 @@
 appId: com.driftsyncone.blowlink
 productName: BlowLink
-# Update checks are notify-only (src/main/updater.ts); nothing is downloaded automatically.
+# Updates are handled by src/main/updater.ts (GitHub releases + SHA256SUMS.txt), not electron-updater.
 publish: null
 directories:
   output: dist

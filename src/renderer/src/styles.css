@@ -323,4 +323,37 @@ p.small {
 }
 .update {
   border-color: var(--violet);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.update .error {
+  flex-basis: 100%;
+  color: var(--danger);
+}
+.testapi {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+button.small {
+  padding: 3px 12px;
+  font-size: 13px;
+}
+.modes.two {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+}
+.modes.two label.check {
+  margin: 4px 0;
+}
+details.advanced {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 4px;
+}
+details.advanced summary {
+  margin: 6px 0;
 }

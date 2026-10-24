@@ -13,11 +13,22 @@ export interface Snapshot {
   state: BridgeState
   logs: string[]
   autostart: boolean
-  update: { version: string; url: string } | null
+  logFile: string
+  update: UpdateView | null
+}
+
+// installable: this copy can download and install it itself; busy/error: how
+// that is going (e.g. "Downloading 40 %").
+export interface UpdateView {
+  version: string
+  url: string
+  installable: boolean
+  busy?: string
+  error?: string
 }
 
 export type DevicePatch = Partial<Omit<DeviceConfig, 'id' | 'type'>>
-export type ConfigPatch = Partial<Pick<Config, 'buttplug' | 'intiface'>>
+export type ConfigPatch = Partial<Pick<Config, 'buttplug' | 'intiface' | 'apiUrl' | 'verbose'>>
 
 export interface Api {
   snapshot(): Promise<Snapshot>
@@ -26,10 +37,14 @@ export interface Api {
   removeDevice(id: string): Promise<void>
   updateConfig(patch: ConfigPatch): Promise<void>
   stopAll(): Promise<void>
+  openLogFolder(): Promise<void>
+  connectDevice(id: string): Promise<void>
   setAutostart(on: boolean): Promise<void>
   openDocs(which: 'intiface' | 'autoblow-token'): Promise<void>
   openUpdate(): Promise<void>
   setCheckUpdates(on: boolean): Promise<void>
+  checkUpdatesNow(): Promise<{ found: boolean; error?: string }>
+  installUpdate(): Promise<void>
 }
 
 export type Channel = 'state' | 'log' | 'config' | 'update'

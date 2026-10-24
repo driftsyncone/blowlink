@@ -148,6 +148,10 @@ export class ButtplugServer {
     return typeof a === 'object' && a ? a.port : this.opts.port
   }
 
+  setVerbose(on: boolean): void {
+    this.opts.verbose = on
+  }
+
   get clients(): number {
     return this.sockets.size
   }

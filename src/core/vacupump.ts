@@ -59,8 +59,7 @@ export class VacuPump extends CloudDevice<Cmd> {
     this.clock.clearTimeout(this.offTimer)
     if (c.kind === 'release') {
       if (this.mode === 'unknown') {
-        await api.discover('vacupump') // startup: just check it's online, don't touch the pump
-        this.mode = 'idle'
+        this.mode = 'idle' // just connected: don't touch the pump
         return
       }
       if (this.mode === 'idle') return

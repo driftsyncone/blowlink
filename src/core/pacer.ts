@@ -79,9 +79,10 @@ export class Pacer<T> {
       .catch(this.onError)
       .finally(() => {
         this.inFlight = false
-        this.nextAt = this.clock.now() + this.opts.intervalMs
+        // keep a longer backoff set by onError (e.g. after HTTP 429)
+        this.nextAt = Math.max(this.nextAt, this.clock.now() + this.opts.intervalMs)
         this.clock.clearTimeout(this.pending)
-        this.pending = this.clock.setTimeout(() => this.check(), this.opts.intervalMs)
+        this.pending = this.clock.setTimeout(() => this.check(), this.nextAt - this.clock.now())
       })
   }
 }

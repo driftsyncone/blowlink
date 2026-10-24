@@ -5,6 +5,7 @@ import type { DeviceType } from './autoblow.ts'
 
 export interface DeviceStatus {
   online: boolean
+  connecting?: boolean // a connect attempt is running
   error?: string // last error, cleared once a command goes through
   output: number // current output level 0-100 (speed, or vacuum share for the pump)
 }
@@ -17,6 +18,7 @@ export interface DeviceEvents {
 export abstract class Device extends EventEmitter<DeviceEvents> {
   abstract readonly type: DeviceType
   status: DeviceStatus = { online: false, output: 0 }
+  verbose = false // log every command sent to the device
 
   constructor(
     public readonly id: string,
@@ -33,6 +35,8 @@ export abstract class Device extends EventEmitter<DeviceEvents> {
   // Buttplug DeviceMessages block for a protocol version (fake server).
   abstract buttplugMessages(ver: number): unknown
   abstract start(): void
+  // One attempt to reach the device (also what the Connect button does).
+  abstract connect(): Promise<void>
   // Stop the device and wait until the stop reached it.
   abstract close(): Promise<void>
 

@@ -23,6 +23,7 @@ export interface DeviceConfig {
 export interface Config {
   buttplug: { enabled: boolean; host: string; port: number }
   intiface: { url: string }
+  apiUrl: string // Autoblow API for discovery; '' = the real one. Set to the Autoblow emulator for testing.
   intervalMs: number // minimum time between API calls per device
   idleMs: number // stop this long after the last stroke
   dry: boolean // log instead of calling the API
@@ -34,6 +35,7 @@ export interface Config {
 export const defaultConfig = (): Config => ({
   buttplug: { enabled: true, host: '127.0.0.1', port: 12345 },
   intiface: { url: 'ws://127.0.0.1:54817' },
+  apiUrl: '',
   intervalMs: 200,
   idleMs: defaultMotorOptions.idleMs,
   dry: false,
