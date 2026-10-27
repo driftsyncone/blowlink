@@ -14,6 +14,9 @@ import { checkForUpdate, download, install, type UpdateInfo } from './updater.ts
 // Dev/test hooks: a separate settings folder (set first: the single-instance lock
 // lives there, so a test copy can run next to the real one), and a screenshot run.
 if (process.env.BLOWLINK_DATA) app.setPath('userData', process.env.BLOWLINK_DATA)
+// The Windows portable exe unpacks itself to a temp folder each run; its settings (and the single-instance
+// lock) live in a folder next to the exe instead, so the file can be moved around with its settings.
+else if (process.env.PORTABLE_EXECUTABLE_DIR) app.setPath('userData', join(process.env.PORTABLE_EXECUTABLE_DIR, 'BlowLink-data'))
 const shotPath = process.env.BLOWLINK_SHOT
 
 if (!app.requestSingleInstanceLock()) {

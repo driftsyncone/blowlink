@@ -4,6 +4,10 @@ Each release's notes come from its section here (the release workflow fails with
 
 ## Unreleased
 
+## 0.2.2
+
+- **Windows portable build:** `BlowLink-Portable-x.y.z.exe`, a single file that needs no install. Its settings live in a `BlowLink-data` folder next to it, start-at-login points at the file you have, and it tells you about new versions instead of updating itself. The installer and the zip stay.
+
 ## 0.2.1
 
 A review-and-hardening release: web pages can no longer drive your device, a stop is much harder to lose, and games that send odd command patterns behave better. Please report anything strange (turn on *Settings → Advanced → Log game messages* and attach `blowlink.log`).

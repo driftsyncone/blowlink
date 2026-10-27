@@ -28,6 +28,7 @@ export interface UpdateInfo {
 
 export function installKind(): InstallKind {
   if (!app.isPackaged) return null
+  if (process.env.PORTABLE_EXECUTABLE_FILE) return null // the portable exe: the release page, no self-update
   if (process.platform === 'linux' && process.env.APPIMAGE) return 'appimage'
   // The per-user installer leaves its uninstaller next to the exe; the zip doesn't.
   if (process.platform === 'win32' && existsSync(join(dirname(process.execPath), 'Uninstall BlowLink.exe'))) return 'nsis'

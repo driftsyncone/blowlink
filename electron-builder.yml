@@ -30,7 +30,7 @@ electronFuses:
   onlyLoadAppFromAsar: true
 
 win:
-  target: [nsis, zip]
+  target: [nsis, portable, zip]
   icon: build/icon.ico
   artifactName: BlowLink-${version}-win-${arch}.${ext}
 # Per-user installer: %LOCALAPPDATA%\Programs\BlowLink, uninstaller under HKCU, never asks
@@ -48,6 +48,12 @@ nsis:
   differentialPackage: false
   artifactName: BlowLink-Setup-${version}.exe
   uninstallDisplayName: BlowLink
+
+# One self-extracting file, nothing installed. It keeps its settings in a BlowLink-data folder next to it
+# (see src/main/index.ts) and does not update itself.
+portable:
+  artifactName: BlowLink-Portable-${version}.exe
+  requestExecutionLevel: user
 
 linux:
   target: [AppImage, deb, tar.gz]

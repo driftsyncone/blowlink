@@ -14,14 +14,17 @@ function execQuote(arg: string): string {
   return '"' + arg.replace(/\\/g, '\\\\\\\\').replace(/["`$]/g, '\\$&').replace(/%/g, '%%') + '"'
 }
 
+// The portable exe runs from a temp copy; the login item has to point at the file the user has.
+const loginPath = () => (process.env.PORTABLE_EXECUTABLE_FILE ? { path: process.env.PORTABLE_EXECUTABLE_FILE } : {})
+
 export function getAutostart(): boolean {
   if (process.platform === 'linux') return existsSync(desktopFile())
-  return app.getLoginItemSettings({ args: ['--hidden'] }).openAtLogin
+  return app.getLoginItemSettings({ args: ['--hidden'], ...loginPath() }).openAtLogin
 }
 
 export function setAutostart(on: boolean): void {
   if (process.platform !== 'linux') {
-    app.setLoginItemSettings({ openAtLogin: on, args: ['--hidden'] })
+    app.setLoginItemSettings({ openAtLogin: on, args: ['--hidden'], ...loginPath() })
     return
   }
   const file = desktopFile()

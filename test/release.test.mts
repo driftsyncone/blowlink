@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { downloadPrefix, expectedHash, pickAsset } from '../src/shared/release.ts'
 
 const assets = [
+  'BlowLink-Portable-0.2.0.exe',
   'BlowLink-Setup-0.2.0.exe',
   'BlowLink-0.2.0-win-x64.zip',
   'BlowLink-0.2.0-linux-x86_64.AppImage',
@@ -14,6 +15,7 @@ test('update file: installer on Windows, AppImage on Linux, nothing elsewhere', 
   assert.equal(pickAsset(assets, 'nsis', 'v0.2.0')?.name, 'BlowLink-Setup-0.2.0.exe')
   if (process.arch === 'x64') assert.equal(pickAsset(assets, 'appimage', 'v0.2.0')?.name, 'BlowLink-0.2.0-linux-x86_64.AppImage')
   assert.equal(pickAsset(assets, null, 'v0.2.0'), null)
+  assert.ok(!['nsis', 'appimage'].some((k) => pickAsset(assets, k as 'nsis', 'v0.2.0')?.name.includes('Portable')), 'the portable exe is never the update file')
   assert.equal(pickAsset(assets, 'nsis', 'v0.3.0'), null) // tag and file must agree
 })
 

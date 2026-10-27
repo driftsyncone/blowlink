@@ -40,11 +40,12 @@ Get the latest version from **[Releases](https://github.com/driftsyncone/blowlin
 
 | System | File | Notes |
 |---|---|---|
-| Windows | `BlowLink-Setup-x.y.z.exe` | Installs for your user only, no admin. Not code-signed: SmartScreen asks, choose *More info → Run anyway*. A portable `.zip` is there too. |
+| Windows | `BlowLink-Setup-x.y.z.exe` | Installs for your user only, no admin. Not code-signed: SmartScreen asks, choose *More info → Run anyway*. |
+| Windows (portable) | `BlowLink-Portable-x.y.z.exe` | One file, nothing installed: run it from anywhere (a USB stick works). Settings, including device tokens, stay in a `BlowLink-data` folder next to it; delete the file and folder to remove every trace. It doesn't update itself: the app tells you when a new version is out. A `.zip` of the unpacked app is there too. |
 | Linux | `BlowLink-x.y.z-linux-x86_64.AppImage` | `chmod +x`, then run it. Also as `.deb` and `.tar.gz`. |
 | macOS | `BlowLink-x.y.z-mac-arm64.dmg` (Apple Silicon) or `-x64.dmg` (Intel) | Not notarised: the first time, open *System Settings → Privacy & Security* and choose *Open Anyway* (on older macOS, right-click the app → *Open*). |
 
-The installer and AppImage versions update themselves from inside the app.
+The installer and AppImage versions update themselves from inside the app; the portable exe, zip, deb, tar.gz and macOS versions tell you when there is a new one.
 
 ## Getting started
 

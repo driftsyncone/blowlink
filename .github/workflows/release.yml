@@ -68,6 +68,11 @@ jobs:
           npx @electron/fuses read --app dist/win-unpacked/BlowLink.exe | tee fuses.txt
           grep -q 'RunAsNode is Disabled' fuses.txt
           grep -q 'OnlyLoadAppFromAsar is Enabled' fuses.txt
+      - name: The portable exe was built
+        shell: pwsh
+        run: |
+          $f = Get-ChildItem dist/BlowLink-Portable-*.exe
+          if (-not $f -or $f.Length -lt 50MB) { throw 'portable exe missing or too small' }
       - name: Test the installer (per-user, no admin, clean uninstall)
         shell: pwsh
         run: ./scripts/test-installer.ps1 -Setup (Get-ChildItem dist/BlowLink-Setup-*.exe).FullName
@@ -76,6 +81,7 @@ jobs:
           name: windows
           path: |
             dist/BlowLink-Setup-*.exe
+            dist/BlowLink-Portable-*.exe
             dist/BlowLink-*-win-*.zip
           retention-days: 7
           if-no-files-found: error
@@ -168,7 +174,7 @@ jobs:
             echo
             echo "### Install"
             echo
-            echo "**Windows:** run \`BlowLink-Setup-$v.exe\`. It installs just for you (no admin prompt) and adds a Start menu shortcut. Settings and tokens are kept across upgrades and uninstall. Or unzip \`BlowLink-$v-win-x64.zip\` and run \`BlowLink.exe\`. The builds aren't code-signed, so SmartScreen asks: *More info → Run anyway*."
+            echo "**Windows:** run \`BlowLink-Setup-$v.exe\`. It installs just for you (no admin prompt) and adds a Start menu shortcut. Settings and tokens are kept across upgrades and uninstall. Or, with nothing installed: run the single file \`BlowLink-Portable-$v.exe\` (its settings stay in a \`BlowLink-data\` folder next to it; it doesn't update itself), or unzip \`BlowLink-$v-win-x64.zip\` and run \`BlowLink.exe\`. The builds aren't code-signed, so SmartScreen asks: *More info → Run anyway*."
             echo
             echo "**Linux:** \`BlowLink-$v-linux-x86_64.AppImage\` (\`chmod +x\`, then run it), \`blowlink_${v}_amd64.deb\`, or the \`.tar.gz\`."
             echo
