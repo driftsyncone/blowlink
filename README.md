@@ -26,7 +26,7 @@ Autoblow's API.
 
 | Device | Status | How commands are played |
 |---|---|---|
-| **VacuGlide 1 / 2** | ✅ Supported | Stroke speed (the API has no position control) |
+| **VacuGlide 2** | ✅ Supported | Stroke speed (the API has no position control) |
 | **AI Ultra** | ⚠️ Untested | Oscillation over the stroke range, or go-to per move |
 | **VacuPump** | ⚠️ Untested | Vacuum level; strokes pulse between your limit and 0 kPa |
 
