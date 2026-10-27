@@ -8,6 +8,12 @@ import { join } from 'node:path'
 const desktopFile = () =>
   join(process.env.XDG_CONFIG_HOME ?? join(homedir(), '.config'), 'autostart', 'blowlink.desktop')
 
+// An Exec= argument in quotes, as the Desktop Entry spec wants it: " ` $ and \ get a backslash in front (a
+// literal backslash needs four, because the file's own string escapes are applied first), and % is doubled.
+function execQuote(arg: string): string {
+  return '"' + arg.replace(/\\/g, '\\\\\\\\').replace(/["`$]/g, '\\$&').replace(/%/g, '%%') + '"'
+}
+
 export function getAutostart(): boolean {
   if (process.platform === 'linux') return existsSync(desktopFile())
   return app.getLoginItemSettings({ args: ['--hidden'] }).openAtLogin
@@ -25,6 +31,7 @@ export function setAutostart(on: boolean): void {
   }
   // An AppImage runs from a temporary mount; $APPIMAGE is the file to start again.
   const exe = process.env.APPIMAGE ?? process.execPath
+  if (/[\r\n]/.test(exe)) throw new Error('the program path contains a line break')
   mkdirSync(join(file, '..'), { recursive: true })
   writeFileSync(
     file,
@@ -33,7 +40,7 @@ export function setAutostart(on: boolean): void {
       'Type=Application',
       'Name=BlowLink',
       'Comment=Connect Intiface/Buttplug games to Autoblow devices',
-      `Exec="${exe.replace(/"/g, '\\"')}" --hidden`,
+      `Exec=${execQuote(exe)} --hidden`,
       'Icon=blowlink',
       'X-GNOME-Autostart-enabled=true',
       ''

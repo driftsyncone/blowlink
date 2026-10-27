@@ -44,7 +44,7 @@ export class Bridge extends EventEmitter<BridgeEvents> {
 
   private makeDevice(d: DeviceConfig): Device {
     const api = this.cfg.dry ? null : new AutoblowApi(d.token, { ...this.apiOpts, ...(this.cfg.apiUrl ? { discoveryUrl: this.cfg.apiUrl } : {}) })
-    const opts = { ...d, idleMs: this.cfg.idleMs, intervalMs: this.cfg.intervalMs }
+    const opts = { ...d, idleMs: this.cfg.idleMs, stopGraceMs: this.cfg.stopGraceMs, intervalMs: this.cfg.intervalMs }
     switch (d.type) {
       case 'vacuglide':
         return new VacuGlide(d.id, d.name, api, opts, this.clock)
@@ -73,20 +73,33 @@ export class Bridge extends EventEmitter<BridgeEvents> {
       this.devices.push(dev)
       if (dc.intiface.enabled) this.startLink(dev, dc)
     }
-    if (this.cfg.buttplug.enabled) {
-      const listed = () => this.devices.filter((d) => this.cfg.devices.find((c) => c.id === d.id)?.buttplug)
-      this.server = new ButtplugServer(listed, { ...this.cfg.buttplug, verbose: this.cfg.verbose }, (m) => {
-        this.log(m)
-        this.changed()
-      })
-      try {
-        await this.server.start()
-      } catch (e) {
-        // Usually: Intiface Central (or another bridge) already uses the port.
-        this.serverError = `port ${this.cfg.buttplug.port} unavailable: ${(e as Error).message}`
-        this.log(`Buttplug server: ${this.serverError}`)
-        this.server = undefined
-      }
+    if (this.cfg.buttplug.enabled) await this.startServer()
+    this.changed()
+  }
+
+  private serverRetry: unknown
+  private shut = false
+
+  // The Buttplug server; if the port is taken (usually Intiface Central), try again every 10 s so that
+  // closing the other program is enough.
+  private async startServer(): Promise<void> {
+    this.clock.clearTimeout(this.serverRetry)
+    const listed = () => this.devices.filter((d) => this.cfg.devices.find((c) => c.id === d.id)?.buttplug)
+    const server = new ButtplugServer(listed, { ...this.cfg.buttplug, verbose: this.cfg.verbose }, (m) => {
+      this.log(m)
+      if (!/^(<-|->) /.test(m)) this.changed() // not on every game message when logging them
+    })
+    try {
+      await server.start()
+      if (this.shut) return void (await server.close()) // closed while it was starting
+      this.server = server
+      this.serverError = undefined
+    } catch (e) {
+      // Usually: Intiface Central (or another bridge) already uses the port.
+      this.serverError = `port ${this.cfg.buttplug.port} unavailable: ${(e as Error).message}`
+      this.log(`Buttplug server: ${this.serverError} (trying again every 10 s)`)
+      this.server = undefined
+      this.serverRetry = this.clock.setTimeout(() => void this.startServer(), 10_000)
     }
     this.changed()
   }
@@ -177,6 +190,8 @@ export class Bridge extends EventEmitter<BridgeEvents> {
   }
 
   async close(): Promise<void> {
+    this.shut = true
+    this.clock.clearTimeout(this.serverRetry)
     for (const l of this.links.values()) l.close()
     await this.server?.close()
     await Promise.all(this.devices.map((d) => d.close()))

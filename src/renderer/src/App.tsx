@@ -18,15 +18,19 @@ export function App() {
   const [config, setConfig] = useState<ConfigView | null>(null)
   const [logs, setLogs] = useState<string[]>([])
   const [update, setUpdate] = useState<Snapshot['update']>(null)
+  const [loadError, setLoadError] = useState('')
 
   useEffect(() => {
-    api.snapshot().then((s) => {
-      setSnap(s)
-      setState(s.state)
-      setConfig(s.config)
-      setLogs(s.logs)
-      setUpdate(s.update)
-    })
+    api
+      .snapshot()
+      .then((s) => {
+        setSnap(s)
+        setState(s.state)
+        setConfig(s.config)
+        setLogs(s.logs)
+        setUpdate(s.update)
+      })
+      .catch((e) => setLoadError(e instanceof Error ? e.message : String(e)))
     const offs = [
       on('state', (s) => setState(s as BridgeState)),
       on('config', (c) => setConfig(c as ConfigView)),
@@ -36,6 +40,7 @@ export function App() {
     return () => offs.forEach((off) => off())
   }, [])
 
+  if (loadError) return <div className="loading">BlowLink couldn't start: {loadError}. Check the log file in the settings folder.</div>
   if (!snap || !state || !config) return <div className="loading">Starting…</div>
 
   const running = state.devices.some((d) => d.status.output > 0)
@@ -102,7 +107,7 @@ function ServerCard({ state, config }: { state: BridgeState; config: ConfigView 
     <section className="card">
       <div className="row between">
         <h2>Buttplug mode</h2>
-        <Toggle on={config.buttplug.enabled} onChange={(v) => api.updateConfig({ buttplug: { ...config.buttplug, enabled: v } })} />
+        <Toggle label="Buttplug mode: let games connect to BlowLink" on={config.buttplug.enabled} onChange={(v) => api.updateConfig({ buttplug: { ...config.buttplug, enabled: v } })} />
       </div>
       <p className="muted">Games connect to BlowLink instead of Intiface Central, at the same address.</p>
       {config.buttplug.enabled &&
@@ -437,9 +442,9 @@ function LogCard({ logs }: { logs: string[] }) {
   )
 }
 
-function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
-    <button role="switch" aria-checked={on} className={`toggle ${on ? 'on' : ''}`} onClick={() => onChange(!on)}>
+    <button role="switch" aria-label={label} aria-checked={on} className={`toggle ${on ? 'on' : ''}`} onClick={() => onChange(!on)}>
       <span />
     </button>
   )

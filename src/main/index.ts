@@ -1,12 +1,12 @@
 // BlowLink desktop app: runs the bridge in the main process, with a window for
 // settings/status and a tray icon (Stop all) so it can keep running in the background.
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, screen, shell, Tray } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, powerMonitor, screen, shell, Tray } from 'electron'
 import { createWriteStream, existsSync, readFileSync, renameSync, statSync, writeFileSync, type WriteStream } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { detectDeviceType, type DeviceType } from '../core/autoblow.ts'
 import { Bridge, type BridgeState } from '../core/bridge.ts'
-import { loadConfig, newDevice, saveConfig, type Config } from '../core/config.ts'
+import { isValidToken, loadConfig, newDevice, normalizeDevice, saveConfig, type Config } from '../core/config.ts'
 import type { Api, Channel, ConfigPatch, ConfigView, DevicePatch, Snapshot, UpdateView } from '../shared/api.ts'
 import { getAutostart, setAutostart } from './autostart.ts'
 import { checkForUpdate, download, install, type UpdateInfo } from './updater.ts'
@@ -30,6 +30,8 @@ let bridge: Bridge
 let win: BrowserWindow | null = null
 let tray: Tray | null = null
 let quitting = false
+let exited = false
+let shuttingDown: Promise<void> | undefined
 const logs: string[] = []
 let update: UpdateInfo | null = null
 let updateBusy: string | undefined
@@ -105,13 +107,22 @@ async function startBridge(): Promise<void> {
   await bridge.start()
 }
 
+// The way out for every exit path (Quit, signals, the OS shutting down): the devices are told to
+// stop before the process goes. Safe to call more than once.
+function shutdown(): Promise<void> {
+  quitting = true
+  return (shuttingDown ??= (bridge ? bridge.close() : Promise.resolve()).catch(() => {}))
+}
+
 let restarting: Promise<void> = Promise.resolve()
 function restartBridge(): Promise<void> {
-  restarting = restarting.then(async () => {
+  // One failed restart must not poison the chain: later settings changes still restart the bridge.
+  const run = restarting.catch(() => {}).then(async () => {
     await bridge.close()
     await startBridge()
   })
-  return restarting
+  restarting = run
+  return run
 }
 
 async function saveAndApply(): Promise<void> {
@@ -281,13 +292,15 @@ const docs = {
   'autoblow-token': 'https://developers.autoblow.com/'
 }
 
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
+
 const api: Api = {
   async snapshot(): Promise<Snapshot> {
     return { version: app.getVersion(), config: configView(), state: bridge.state(), logs, autostart: getAutostart(), logFile: logPath(), update: updateView() }
   },
   async addDevice(token: string, type?: DeviceType) {
     token = token.trim()
-    if (!/^[\w.-]{8,}$/.test(token)) return { ok: false, error: "That doesn't look like a device token." }
+    if (!isValidToken(token)) return { ok: false, error: "That doesn't look like a device token." }
     if (cfg.devices.some((d) => d.token === token)) return { ok: false, error: 'That device is already added.' }
     if (!type) {
       try {
@@ -305,13 +318,18 @@ const api: Api = {
   },
   async updateDevice(id: string, patch: DevicePatch) {
     const d = cfg.devices.find((x) => x.id === id)
-    if (!d) return
-    if (patch.token !== undefined && !patch.token.trim()) delete patch.token // empty = keep
-    Object.assign(d, patch, patch.intiface ? { intiface: { ...d.intiface, ...patch.intiface } } : {})
-    d.maxSpeed = Math.min(100, Math.max(1, Math.round(d.maxSpeed)))
-    d.minSpeed = Math.min(d.maxSpeed, Math.max(1, Math.round(d.minSpeed)))
-    d.maxVacuumKpa = Math.min(60, Math.max(5, Math.round(d.maxVacuumKpa)))
-    if (d.motion !== 'goto') d.motion = 'oscillate'
+    if (!d || !isObj(patch)) return
+    // Only known fields are taken from the window, and the result goes through the same checks as a
+    // settings file: types, ranges, token format.
+    const p = patch as Record<string, unknown>
+    const merged: Record<string, unknown> = { ...d }
+    for (const k of ['name', 'buttplug', 'maxSpeed', 'minSpeed', 'mapping', 'spmLow', 'spmHigh', 'motion', 'maxVacuumKpa'])
+      if (k in p) merged[k] = p[k]
+    if (typeof p.token === 'string' && p.token.trim()) merged.token = p.token // empty = keep
+    if (isObj(p.intiface)) merged.intiface = { ...d.intiface, ...(typeof p.intiface.enabled === 'boolean' ? { enabled: p.intiface.enabled } : {}), ...(typeof p.intiface.name === 'string' ? { name: p.intiface.name } : {}) }
+    const n = normalizeDevice(merged, cfg.devices.filter((x) => x !== d).map((x) => x.id), log)
+    if (!n) return
+    Object.assign(d, n, { id: d.id, type: d.type })
     await saveAndApply()
   },
   async removeDevice(id: string) {
@@ -319,10 +337,20 @@ const api: Api = {
     await saveAndApply()
   },
   async updateConfig(patch: ConfigPatch) {
-    if (patch.buttplug) cfg.buttplug = { ...cfg.buttplug, ...patch.buttplug }
-    if (patch.intiface) cfg.intiface = { ...cfg.intiface, ...patch.intiface }
-    if (typeof patch.verbose === 'boolean') cfg.verbose = patch.verbose
-    if (typeof patch.apiUrl === 'string') cfg.apiUrl = patch.apiUrl.trim().replace(/\/+$/, '')
+    if (!isObj(patch)) return
+    const p = patch as Record<string, unknown>
+    if (isObj(p.buttplug)) {
+      // The address and allowed web pages are only changed in the settings file.
+      if (typeof p.buttplug.enabled === 'boolean') cfg.buttplug.enabled = p.buttplug.enabled
+      const port = p.buttplug.port
+      if (typeof port === 'number' && Number.isInteger(port) && port >= 1 && port <= 65535) cfg.buttplug.port = port
+    }
+    if (isObj(p.intiface) && typeof p.intiface.url === 'string' && /^wss?:\/\/\S+$/.test(p.intiface.url.trim())) cfg.intiface.url = p.intiface.url.trim()
+    if (typeof p.verbose === 'boolean') cfg.verbose = p.verbose
+    if (typeof p.apiUrl === 'string') {
+      const v = p.apiUrl.trim().replace(/\/+$/, '')
+      if (v === '' || /^https?:\/\/\S+$/.test(v)) cfg.apiUrl = v
+    }
     await saveAndApply()
   },
   async stopAll() {
@@ -338,7 +366,7 @@ const api: Api = {
     setAutostart(on)
   },
   async openDocs(which) {
-    await shell.openExternal(docs[which])
+    if (Object.hasOwn(docs, which)) await shell.openExternal(docs[which])
   },
   async openUpdate() {
     if (update) await shell.openExternal(update.url)
@@ -353,10 +381,13 @@ const api: Api = {
   installUpdate
 }
 
-ipcMain.handle('blowlink', (e, method: keyof Api, ...args: unknown[]) => {
-  if (e.senderFrame?.url && !/^(file:|http:\/\/localhost)/.test(e.senderFrame.url)) throw new Error('not allowed')
-  const fn = api[method] as ((...a: unknown[]) => Promise<unknown>) | undefined
-  if (typeof fn !== 'function') throw new Error(`unknown method ${String(method)}`)
+ipcMain.handle('blowlink', (e, method: unknown, ...args: unknown[]) => {
+  // Only our own window may call: the packaged page (file://) or the dev server.
+  const url = e.senderFrame?.url ?? ''
+  const dev = process.env.ELECTRON_RENDERER_URL
+  if (!(url.startsWith('file://') || (dev && url.startsWith(dev)))) throw new Error('not allowed')
+  if (typeof method !== 'string' || !Object.hasOwn(api, method)) throw new Error('unknown method')
+  const fn = (api as unknown as Record<string, (...a: unknown[]) => Promise<unknown>>)[method]
   return fn(...args)
 })
 
@@ -364,32 +395,77 @@ ipcMain.handle('blowlink', (e, method: keyof Api, ...args: unknown[]) => {
 
 app.on('second-instance', showWindow)
 
-app.whenReady().then(async () => {
-  openLog()
-  log(`BlowLink ${app.getVersion()} starting`)
-  cfg = loadConfig(cfgPath())
-  importLegacyToken()
-  await startBridge()
+// Every way the process can end tells the devices to stop first. A device left running by a closed
+// program is the worst thing this app can do.
+for (const sig of ['SIGTERM', 'SIGINT', 'SIGHUP'] as const) process.on(sig, () => void shutdown().then(() => app.exit(0)))
+process.on('uncaughtException', (err) => {
+  log(`unexpected error: ${err.stack ?? err.message}`)
   try {
-    createTray()
-  } catch (e) {
-    log(`no tray icon: ${(e as Error).message}`) // e.g. a desktop without a system tray
+    bridge?.stopAll()
+  } catch {
+    // nothing more to do
   }
-  if (!process.argv.includes('--hidden') || !cfg.devices.length) showWindow()
-  setTimeout(() => void checkUpdates(), 10_000)
-  setInterval(() => void checkUpdates(), 24 * 60 * 60 * 1000)
+})
+process.on('unhandledRejection', (reason) => log(`unexpected error: ${reason instanceof Error ? (reason.stack ?? reason.message) : String(reason)}`))
+
+app
+  .whenReady()
+  .then(async () => {
+    openLog()
+    log(`BlowLink ${app.getVersion()} starting`)
+    const notes: string[] = []
+    cfg = loadConfig(cfgPath(), (m) => {
+      log(m)
+      notes.push(m)
+    })
+    importLegacyToken()
+    try {
+      await startBridge()
+    } catch (e) {
+      log(`couldn't start: ${(e as Error).message}`)
+      dialog.showErrorBox('BlowLink', `BlowLink couldn't start its bridge: ${(e as Error).message}`)
+    }
+    try {
+      createTray()
+    } catch (e) {
+      log(`no tray icon: ${(e as Error).message}`) // e.g. a desktop without a system tray
+    }
+    // Windows sends no before-quit when it shuts down or logs off; a window that is never shown receives
+    // session-end. Linux and macOS have powerMonitor's shutdown event.
+    if (process.platform === 'win32') {
+      const sessionWin = new BrowserWindow({ show: false, width: 1, height: 1, webPreferences: { sandbox: true, contextIsolation: true } })
+      sessionWin.on('session-end', () => void shutdown())
+    } else {
+      // (missing from the typings of some Electron versions)
+      ;(powerMonitor as unknown as NodeJS.EventEmitter).on('shutdown', (e: { preventDefault(): void }) => {
+        e.preventDefault()
+        void shutdown().then(() => app.exit(0))
+      })
+    }
+    if (!process.argv.includes('--hidden') || !cfg.devices.length || notes.length) showWindow()
+    const moved = notes.find((n) => n.includes('.bad'))
+    if (moved) void dialog.showMessageBox({ type: 'warning', message: 'BlowLink could not read its settings file', detail: moved })
+    setTimeout(() => void checkUpdates(), 10_000)
+    setInterval(() => void checkUpdates(), 24 * 60 * 60 * 1000)
+  })
+  .catch((e) => {
+    log(`startup failed: ${(e as Error).message}`)
+    dialog.showErrorBox('BlowLink', `BlowLink hit an error while starting: ${(e as Error).message}`)
+    showWindow()
+  })
+
+// Stays alive in the tray when the window closes (without a tray, it quits instead).
+app.on('window-all-closed', () => {
+  if (!tray) app.quit() // nothing to bring the window back from: don't leave an invisible process
 })
 
-// Stays alive in the tray when the window closes.
-app.on('window-all-closed', () => {})
-
 app.on('before-quit', (e) => {
-  if (quitting) return
   quitting = true
+  if (exited) return
   e.preventDefault()
   // Stop every device before exiting.
-  bridge
-    .close()
-    .catch(() => {})
-    .finally(() => app.quit())
+  void shutdown().then(() => {
+    exited = true
+    app.quit()
+  })
 })

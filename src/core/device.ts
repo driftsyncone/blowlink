@@ -32,6 +32,13 @@ export abstract class Device extends EventEmitter<DeviceEvents> {
   // A level 0-1 (Buttplug Vibrate/Scalar/Rotate/Oscillate).
   abstract level(level: number): void
   abstract stop(): void
+  // A stop the app asked for (Buttplug StopDeviceCmd / StopAllDevices). Some games send a stop
+  // right before every move; a device may hold it back for a moment so that a command that
+  // follows replaces it instead of the device dropping to zero and back. The Stop button, a
+  // disconnecting app and shutdown use stop(), which is immediate.
+  stopSoon(): void {
+    this.stop()
+  }
   // Buttplug DeviceMessages block for a protocol version (fake server).
   abstract buttplugMessages(ver: number): unknown
   abstract start(): void

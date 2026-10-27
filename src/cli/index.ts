@@ -5,7 +5,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { Bridge } from '../core/bridge.ts'
-import { loadConfig, newDevice } from '../core/config.ts'
+import { isValidToken, loadConfig, newDevice } from '../core/config.ts'
 
 const help = `Usage: blowlink [flags]
 
@@ -67,27 +67,45 @@ if (a.help) {
   process.exit(0)
 }
 
-const cfg = loadConfig(a.config ?? configPath())
+const fail = (msg: string): never => {
+  console.error(msg)
+  process.exit(2)
+}
+// A number flag in range, or a clear error (no silent NaN reaching the devices).
+const flagNum = (name: string, v: string, min: number, max: number): number => {
+  const n = Number(v)
+  return Number.isFinite(n) && n >= min && n <= max ? n : fail(`--${name} must be a number from ${min} to ${max}`)
+}
+
+const cfg = loadConfig(a.config ?? configPath(), (m) => console.error(m))
 if (a.addr) {
-  const i = a.addr.lastIndexOf(':')
-  cfg.buttplug.host = a.addr.slice(0, i)
-  cfg.buttplug.port = Number(a.addr.slice(i + 1))
+  const m = /^(.+):(\d{1,5})$/.exec(a.addr)
+  if (!m) fail('--addr must look like HOST:PORT, for example 127.0.0.1:12345')
+  cfg.buttplug.host = m![1]
+  cfg.buttplug.port = flagNum('addr (port)', m![2], 1, 65535)
 }
 if (a['no-buttplug']) cfg.buttplug.enabled = false
-if (a['intiface-url']) cfg.intiface.url = a['intiface-url']
+if (a['intiface-url']) {
+  if (!/^wss?:\/\/\S+$/.test(a['intiface-url'])) fail('--intiface-url must start with ws:// or wss://')
+  cfg.intiface.url = a['intiface-url']
+}
 if (a.dry) cfg.dry = true
-if (a['api-url']) cfg.apiUrl = a['api-url']
+if (a['api-url']) {
+  if (!/^https?:\/\/\S+$/.test(a['api-url'])) fail('--api-url must start with http:// or https://')
+  cfg.apiUrl = a['api-url']
+}
 if (a.v) cfg.verbose = true
 
 // Flags describe one VacuGlide, like the old vacuglide-bridge.
-const token = a.token ?? (cfg.devices.length ? '' : legacyToken())
+const token = (a.token ?? (cfg.devices.length ? '' : legacyToken())).trim()
+if (token && !isValidToken(token)) fail("that doesn't look like a device token")
 if (token || (cfg.dry && !cfg.devices.length)) {
   cfg.devices = cfg.devices.filter((d) => d.type !== 'vacuglide')
   cfg.devices.unshift(newDevice('vacuglide', token))
 }
 for (const d of cfg.devices) {
-  if (a.max) d.maxSpeed = Number(a.max)
-  if (a.min) d.minSpeed = Number(a.min)
+  if (a.max) d.maxSpeed = flagNum('max', a.max, 1, 100)
+  if (a.min) d.minSpeed = flagNum('min', a.min, 1, 100)
   if (a.map) {
     if (a.map !== 'velocity' && a.map !== 'tempo') {
       console.error(`--map must be "velocity" or "tempo", not "${a.map}"`)
@@ -108,12 +126,27 @@ bridge.on('log', (m) => console.log(stamp(), m))
 await bridge.start()
 
 let stopping = false
-const shutdown = async () => {
+const shutdown = async (code = 0) => {
   if (stopping) return
   stopping = true
   await bridge.close()
   console.log(stamp(), 'stopped')
-  process.exit(0)
+  process.exit(code)
 }
-process.on('SIGINT', shutdown)
-process.on('SIGTERM', shutdown)
+// Every way the process can end stops the devices first.
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK'] as const) process.on(sig, () => void shutdown())
+process.on('uncaughtException', (e) => {
+  console.error(e)
+  void shutdown(1)
+})
+process.on('unhandledRejection', (e) => {
+  console.error(e)
+  void shutdown(1)
+})
+
+// A port that can't be used (usually Intiface Central has it) is an error for a headless run.
+const err = bridge.state().buttplug.error
+if (cfg.buttplug.enabled && err) {
+  console.error(err)
+  await shutdown(1)
+}

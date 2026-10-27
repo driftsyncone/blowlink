@@ -5,7 +5,7 @@ import { Bridge } from '../src/core/bridge.ts'
 import { defaultConfig, newDevice } from '../src/core/config.ts'
 
 test('applyOptions: in-place edits are seen; speed and logging apply live, structure restarts', async () => {
-  const cfg = { ...defaultConfig(), dry: true, buttplug: { enabled: false, host: '127.0.0.1', port: 0 } }
+  const cfg = { ...defaultConfig(), dry: true, buttplug: { enabled: false, host: '127.0.0.1', port: 0, allowedOrigins: [] } }
   cfg.devices.push(newDevice('vacuglide', 'tok'))
   const bridge = new Bridge(cfg)
   await bridge.start()
@@ -25,7 +25,7 @@ test('applyOptions: in-place edits are seen; speed and logging apply live, struc
 })
 
 test('applyOptions: switching Intiface mode on/off is live (apps stay connected)', async () => {
-  const cfg = { ...defaultConfig(), dry: true, buttplug: { enabled: false, host: '127.0.0.1', port: 0 }, intiface: { url: 'ws://127.0.0.1:1' } }
+  const cfg = { ...defaultConfig(), dry: true, buttplug: { enabled: false, host: '127.0.0.1', port: 0, allowedOrigins: [] }, intiface: { url: 'ws://127.0.0.1:1' } }
   cfg.devices.push(newDevice('vacuglide', 'tok'))
   const bridge = new Bridge(cfg)
   await bridge.start()

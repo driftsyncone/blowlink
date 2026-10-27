@@ -44,12 +44,20 @@ export class AutoblowApi {
   async request(method: string, url: string, body?: unknown): Promise<Record<string, unknown>> {
     const headers: Record<string, string> = { 'x-device-token': this.token }
     if (body !== undefined) headers['Content-Type'] = 'application/json'
-    const resp = await this.fetch(url, {
-      method,
-      headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
-      signal: AbortSignal.timeout(this.timeoutMs)
-    })
+    let resp: Response
+    try {
+      resp = await this.fetch(url, {
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: AbortSignal.timeout(this.timeoutMs),
+        redirect: 'error' // a redirect would carry the token to wherever it points
+      })
+    } catch (e) {
+      // Some errors (an invalid header value) quote the token; never pass that on.
+      const msg = e instanceof Error ? e.message : String(e)
+      throw new Error(this.token ? msg.split(this.token).join('***') : msg)
+    }
     const raw = await resp.text()
     let out: Record<string, unknown> = {}
     try {
@@ -59,6 +67,7 @@ export class AutoblowApi {
     }
     if (resp.status >= 300) {
       if (resp.status === 502) this.host = '' // device dropped off; rediscover next time
+      if (resp.status === 401 || resp.status === 403) throw new ApiError(resp.status, `HTTP ${resp.status}: Autoblow rejected the token (check it in the device card)`)
       throw new ApiError(resp.status, `HTTP ${resp.status}: ${raw.trim()}`)
     }
     return out

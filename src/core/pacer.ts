@@ -23,6 +23,9 @@ export class Pacer<T> {
   private pending: unknown // scheduled re-check
   private ticker: unknown
   private stopped = false
+  private holdUntil = 0 // a stop the game sent is held back until then (see hold)
+  private current: Promise<void> = Promise.resolve() // the send in flight, if any
+  private gen = 0 // bumped by reset(), so a send that finishes after it does not overwrite it
 
   constructor(
     private get: () => T,
@@ -50,6 +53,19 @@ export class Pacer<T> {
   // Forget what was sent, e.g. after the device reconnected.
   reset(): void {
     this.sent = undefined
+    this.gen++
+  }
+
+  // Hold every send back for ms, so a command that follows a stop right away replaces it
+  // instead of the device being told to stop and then to start again.
+  hold(ms: number): void {
+    this.holdUntil = Math.max(this.holdUntil, this.clock.now() + ms)
+    this.check()
+  }
+
+  // Resolves when the send in flight (if any) has finished, successfully or not.
+  settled(): Promise<void> {
+    return this.current
   }
 
   // Back off before the next send, e.g. after HTTP 429.
@@ -69,14 +85,26 @@ export class Pacer<T> {
       this.pending = this.clock.setTimeout(() => this.check(), this.nextAt - now)
       return
     }
+    if (now < this.holdUntil) {
+      this.clock.clearTimeout(this.pending)
+      this.pending = this.clock.setTimeout(() => this.check(), this.holdUntil - now)
+      return
+    }
     const v = this.get()
     if (this.sent && this.opts.skip(this.sent.v, v)) return
     this.inFlight = true
-    this.send(v)
+    const gen = this.gen
+    this.current = this.send(v)
       .then(() => {
-        this.sent = { v }
+        if (gen === this.gen) this.sent = { v }
       })
-      .catch(this.onError)
+      .catch((err) => {
+        // The request may have reached the device even though it failed here (a timeout after
+        // the server acted), so what the device is doing is unknown: the next check must send
+        // whatever is wanted, even if that equals the last value that was confirmed.
+        this.sent = undefined
+        this.onError(err)
+      })
       .finally(() => {
         this.inFlight = false
         // keep a longer backoff set by onError (e.g. after HTTP 429)

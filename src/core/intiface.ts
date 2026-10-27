@@ -9,7 +9,7 @@
 import WebSocket from 'ws'
 import type { Clock } from './clock.ts'
 import type { Device } from './device.ts'
-import { parseTCode } from './tcode.ts'
+import { hasTCodeStop, parseTCode } from './tcode.ts'
 
 export interface IntifaceLinkOptions {
   url: string // default ws://127.0.0.1:54817
@@ -53,10 +53,12 @@ export class IntifaceLink {
     ws.on('message', (data) => {
       const text = data.toString()
       if (this.opts.verbose) this.log(`${this.device.name} <- ${JSON.stringify(text)}`)
-      for (const m of parseTCode(text)) {
-        if (m.axis !== 'L0') continue
-        this.device.stroke(m.pos, m.intervalMs ?? 0)
-      }
+      if (hasTCodeStop(text)) this.device.stopSoon()
+      const moves = parseTCode(text)
+      for (const m of moves) if (m.axis === 'L0') this.device.stroke(m.pos, m.intervalMs ?? 0)
+      // Vibrate axes (V0, V1): a game that only vibrates reaches the device as a level.
+      const vibes = moves.filter((m) => m.axis.startsWith('V')).map((m) => m.pos)
+      if (vibes.length) this.device.level(Math.max(...vibes))
     })
     ws.on('error', (e) => {
       if (!this.loggedDown) this.log(`${this.device.name}: Intiface not reachable at ${this.opts.url} (${e.message}); retrying`)

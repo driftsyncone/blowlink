@@ -16,6 +16,8 @@ import { downloadPrefix, expectedHash, pickAsset, releasesPage, type Asset, type
 
 const latestApi = 'https://api.github.com/repos/driftsyncone/blowlink/releases/latest'
 const headers = { 'User-Agent': 'BlowLink' }
+const maxDownload = 500 << 20 // an installer bigger than this is not ours
+const stallMs = 30_000 // a download that gets nothing for this long is given up
 
 export interface UpdateInfo {
   version: string
@@ -33,7 +35,7 @@ export function installKind(): InstallKind {
 }
 
 export async function checkForUpdate(): Promise<UpdateInfo | null> {
-  const resp = await net.fetch(latestApi, { headers: { ...headers, Accept: 'application/vnd.github+json' } })
+  const resp = await net.fetch(latestApi, { headers: { ...headers, Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(30_000) })
   if (!resp.ok) throw new Error(`GitHub answered ${resp.status}`)
   const r = (await resp.json()) as {
     tag_name?: string
@@ -55,7 +57,7 @@ export async function checkForUpdate(): Promise<UpdateInfo | null> {
 // for an AppImage, so the final rename stays on one disk) and check its hash.
 export async function download(u: UpdateInfo, progress: (pct: number) => void): Promise<string> {
   if (!u.asset || !u.sums) throw new Error('no installable file in this release')
-  const sumsResp = await net.fetch(u.sums.url, { headers })
+  const sumsResp = await net.fetch(u.sums.url, { headers, signal: AbortSignal.timeout(30_000) })
   if (!sumsResp.ok) throw new Error(`SHA256SUMS.txt: GitHub answered ${sumsResp.status}`)
   const want = expectedHash(await sumsResp.text(), u.asset.name)
   if (!want) throw new Error(`${u.asset.name} is not listed in SHA256SUMS.txt`)
@@ -63,17 +65,32 @@ export async function download(u: UpdateInfo, progress: (pct: number) => void): 
   const dir = installKind() === 'appimage' ? dirname(process.env.APPIMAGE!) : join(app.getPath('userData'), 'updates')
   await mkdir(dir, { recursive: true })
   const file = join(dir, installKind() === 'appimage' ? `.${u.asset.name}.download` : u.asset.name)
-  const resp = await net.fetch(u.asset.url, { headers })
-  if (!resp.ok || !resp.body) throw new Error(`download: GitHub answered ${resp.status}`)
+  const ac = new AbortController()
+  let stall = setTimeout(() => ac.abort(), stallMs)
+  const resp = await net.fetch(u.asset.url, { headers, signal: ac.signal }).catch((e) => {
+    clearTimeout(stall)
+    throw e
+  })
+  if (!resp.ok || !resp.body) {
+    clearTimeout(stall)
+    throw new Error(`download: GitHub answered ${resp.status}`)
+  }
   const total = Number(resp.headers.get('content-length')) || 0
+  if (total > maxDownload) {
+    clearTimeout(stall)
+    throw new Error('download: the file is larger than expected; nothing was installed')
+  }
   const hash = createHash('sha256')
   const out = createWriteStream(file)
   let got = 0
   let shown = -1
   try {
     for await (const chunk of Readable.fromWeb(resp.body as ReadableStream<Uint8Array>)) {
+      clearTimeout(stall)
+      stall = setTimeout(() => ac.abort(), stallMs)
       hash.update(chunk)
       got += chunk.length
+      if (got > maxDownload) throw new Error('download: the file is larger than expected; nothing was installed')
       if (!out.write(chunk)) await new Promise((r) => out.once('drain', r))
       const pct = total ? Math.floor((got / total) * 100) : 0
       if (pct !== shown) progress((shown = pct))
@@ -83,6 +100,8 @@ export async function download(u: UpdateInfo, progress: (pct: number) => void): 
     out.destroy()
     await rm(file, { force: true })
     throw e
+  } finally {
+    clearTimeout(stall)
   }
   if (hash.digest('hex') !== want) {
     await rm(file, { force: true })
@@ -98,9 +117,16 @@ export async function install(file: string): Promise<void> {
     const target = process.env.APPIMAGE!
     await chmod(file, 0o755)
     await rename(file, target) // the running copy keeps its open inode
-    app.relaunch({ execPath: target, args: [] })
+    // The new copy must be able to take the single-instance lock, and should start the way this one did.
+    app.releaseSingleInstanceLock()
+    app.relaunch({ execPath: target, args: process.argv.includes('--hidden') ? ['--hidden'] : [] })
     return
   }
   // Silent per-user install; --force-run starts BlowLink again when it's done.
-  spawn(file, ['--updated', '/S', '--force-run'], { detached: true, stdio: 'ignore' }).unref()
+  const child = spawn(file, ['--updated', '/S', '--force-run'], { detached: true, stdio: 'ignore' })
+  await new Promise<void>((res, rej) => {
+    child.once('error', rej) // e.g. the file can't be run: report it instead of quitting into nothing
+    child.once('spawn', () => res())
+  })
+  child.unref()
 }

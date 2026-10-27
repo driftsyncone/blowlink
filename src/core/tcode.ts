@@ -23,3 +23,6 @@ export function parseTCode(text: string): TCodeMove[] {
   }
   return out
 }
+
+// DSTOP: the device-stop command.
+export const hasTCodeStop = (text: string): boolean => /(^|\s)DSTOP(\s|$)/i.test(text)

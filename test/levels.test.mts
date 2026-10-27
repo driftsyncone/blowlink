@@ -81,7 +81,7 @@ test('Cycle of Corruption capture: far fewer calls, same shape', async () => {
   assert.equal(sent.at(-1)?.[1], 0)
 })
 
-test('Cycle of Corruption, 6.5 min: each pulse section is one command, game stops are immediate', async () => {
+test('Cycle of Corruption, 6.5 min: each pulse section is one command, game stops go out within the stop grace', async () => {
   const { messages } = JSON.parse(readFileSync(new URL('../testdata/cycle-of-corruption-2.json', import.meta.url), 'utf8'))
   const { clock, dev, sent } = rig()
   const s = new Session(() => [dev], () => {})
@@ -96,7 +96,7 @@ test('Cycle of Corruption, 6.5 min: each pulse section is one command, game stop
   assert.ok(sent.length <= 24, `${sent.length} calls`)
   for (const t of stops) {
     const next = sent.find(([at]) => at >= t)
-    if (next && next[1] === 0) assert.ok(next[0] - t <= 1, `stop at ${t} went out after ${next[0] - t} ms`)
+    if (next && next[1] === 0) assert.ok(next[0] - t <= 150, `stop at ${t} went out after ${next[0] - t} ms`)
   }
 })
 

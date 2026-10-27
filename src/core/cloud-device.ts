@@ -12,8 +12,13 @@ import { Device } from './device.ts'
 import { Motor, type MotorOptions } from './motor.ts'
 import { Pacer } from './pacer.ts'
 
+export const defaultStopGraceMs = 120
+
 export interface CloudOptions extends MotorOptions {
   intervalMs: number // minimum time between API calls
+  // How long a stop the game sent may wait for the command that follows it (0 = send it at once;
+  // default 120 ms). See Device.stopSoon.
+  stopGraceMs?: number
 }
 
 export abstract class CloudDevice<Cmd> extends Device {
@@ -23,6 +28,7 @@ export abstract class CloudDevice<Cmd> extends Device {
   private connecting = false
   private closed = false
   private failures = 0 // consecutive failed commands (not counting 429)
+  protected stopGraceMs: number
 
   // api null = dry run: log commands instead of calling the API.
   constructor(
@@ -33,6 +39,7 @@ export abstract class CloudDevice<Cmd> extends Device {
     protected clock: Clock
   ) {
     super(id, name)
+    this.stopGraceMs = opts.stopGraceMs ?? defaultStopGraceMs
     this.motor = new Motor(opts, clock, () => this.pacer?.wake())
     this.pacer = new Pacer<Cmd>(
       () => this.command(),
@@ -104,11 +111,35 @@ export abstract class CloudDevice<Cmd> extends Device {
     this.motor.stop()
   }
 
+  // With a grace period (the default), the state goes to zero now but the device is only told once
+  // the grace is over, so a move that follows straight away replaces the stop. Without one, this
+  // is stop().
+  stopSoon(): void {
+    if (this.stopGraceMs <= 0) return this.stop()
+    this.motor.stop(false)
+    this.pacer.hold(this.stopGraceMs)
+  }
+
   async close(): Promise<void> {
     this.closed = true
     this.pacer.stop()
     this.motor.stop()
-    if (this.api?.host) await this.dispatch(this.stopCommand()).catch(() => {})
+    await this.pacer.settled() // a speed request still in flight must not land after the stop
+    if (!this.api?.host) return
+    // The stop is the one command that must arrive: try again through rate limits and blips.
+    let lastErr = ''
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        await this.dispatch(this.stopCommand())
+        return
+      } catch (e) {
+        lastErr = e instanceof Error ? e.message : String(e)
+        const s = /retry in (\d+) second/i.exec(lastErr)
+        const waitMs = s ? Math.min(Number(s[1]), 5) * 1000 : 500 * (attempt + 1)
+        await new Promise((r) => this.clock.setTimeout(() => r(undefined), waitMs))
+      }
+    }
+    this.log(`could not confirm that the device stopped (${lastErr}); check the device`)
   }
 
   private async dispatch(c: Cmd): Promise<void> {
@@ -130,6 +161,8 @@ export abstract class CloudDevice<Cmd> extends Device {
       // Autoblow says how long to wait: "Rate limit exceeded, retry in 4 seconds".
       const s = /retry in (\d+) second/i.exec(msg)
       this.pacer.delay(s ? Number(s[1]) * 1000 : 5000)
+    } else if (err instanceof ApiError && (err.status === 401 || err.status === 403) && this.api) {
+      this.api.host = '' // the token is wrong: retrying only hammers the API
     } else if (this.api?.host && ++this.failures >= 3) {
       this.api.host = '' // keeps failing (network?): give up until the user connects
     } else if (this.api?.host) {
